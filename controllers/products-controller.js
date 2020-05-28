@@ -1,3 +1,5 @@
+const { v4: uuid } = require("uuid");
+
 const HttpError = require("../models/http-error");
 
 const DUMMY_PRODUCTS = [
@@ -37,5 +39,23 @@ const getProductByUserId = (req, res, next) => {
   res.json({ product: product });
 };
 
+const createProduct = (req, res, next) => {
+  const { userId, title, imageUrl, description, minPrice, maxPrice } = req.body;
+  const createdPlace = {
+    id: uuid(),
+    userId,
+    title,
+    imageUrl,
+    description,
+    minPrice,
+    maxPrice,
+  };
+
+  DUMMY_PRODUCTS.push(createProduct);
+
+  res.status(201).json(createdPlace);
+};
+
 exports.getProductById = getProductById;
 exports.getProductByUserId = getProductByUserId;
+exports.createProduct = createProduct;
