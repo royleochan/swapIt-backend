@@ -6,8 +6,12 @@ const router = express.Router();
 
 router.get("/:pid", productsControllers.getProductById);
 
-router.get("/user/:uid", productsControllers.getProductByUserId);
+router.get("/user/:uid", productsControllers.getProductsByUserId);
 
 router.post("/", productsControllers.createProduct);
+
+router.patch("/:pid", productsControllers.updateProduct);
+
+router.delete("/:pid", productsControllers.deleteProduct);
 
 module.exports = router;

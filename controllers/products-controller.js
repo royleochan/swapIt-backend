@@ -27,7 +27,7 @@ const getProductById = (req, res, next) => {
   res.json({ product: product });
 };
 
-const getProductByUserId = (req, res, next) => {
+const getProductsByUserId = (req, res, next) => {
   const userId = req.params.uid;
   const product = DUMMY_PRODUCTS.find((p) => p.userId === userId);
 
@@ -56,6 +56,26 @@ const createProduct = (req, res, next) => {
   res.status(201).json(createdPlace);
 };
 
+const updateProduct = (req, res, next) => {
+  const { title, description, minPrice, maxPrice } = req.body;
+  const productId = req.params.pid;
+
+  const updatedProduct = { ...DUMMY_PRODUCTS.find((p) => p.id === productId) };
+  const productIndex = DUMMY_PRODUCTS.findIndex((p) => p.id === productId);
+  updatedProduct.title = title;
+  updatedProduct.description = description;
+  updatedProduct.minPrice = minPrice;
+  updatedProduct.maxPrice = maxPrice;
+
+  DUMMY_PRODUCTS[productIndex] = updatedProduct;
+
+  res.status(200).json({ product: updatedProduct });
+};
+
+const deleteProduct = (req, res, next) => {};
+
 exports.getProductById = getProductById;
-exports.getProductByUserId = getProductByUserId;
+exports.getProductsByUserId = getProductsByUserId;
 exports.createProduct = createProduct;
+exports.updateProduct = updateProduct;
+exports.deleteProduct = deleteProduct;
