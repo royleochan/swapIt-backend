@@ -2,7 +2,7 @@ const { v4: uuid } = require("uuid");
 
 const HttpError = require("../models/http-error");
 
-const DUMMY_PRODUCTS = [
+let DUMMY_PRODUCTS = [
   {
     id: "p1",
     userId: "u1",
@@ -72,7 +72,11 @@ const updateProduct = (req, res, next) => {
   res.status(200).json({ product: updatedProduct });
 };
 
-const deleteProduct = (req, res, next) => {};
+const deleteProduct = (req, res, next) => {
+  const productId = req.params.pid;
+  DUMMY_PRODUCTS = DUMMY_PRODUCTS.filter((prod) => prod.id != productId);
+  res.status(200).json({ message: "Deleted Product" });
+};
 
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
