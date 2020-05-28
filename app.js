@@ -5,6 +5,6 @@ const productRoutes = require("./routes/products-routes");
 
 const app = express();
 
-app.use(productRoutes);
+app.use('/api/products',productRoutes);
 
 app.listen(5000);
