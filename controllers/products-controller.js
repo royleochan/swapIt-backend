@@ -29,14 +29,14 @@ const getProductById = (req, res, next) => {
 
 const getProductsByUserId = (req, res, next) => {
   const userId = req.params.uid;
-  const product = DUMMY_PRODUCTS.find((p) => p.userId === userId);
+  const products = DUMMY_PRODUCTS.filter((p) => p.userId === userId);
 
-  if (!product) {
-    const error = new HttpError("Could not find place for user id", 404);
+  if (!products || products.length === 0) {
+    const error = new HttpError("Could not find places for user id", 404);
     return next(error);
   }
 
-  res.json({ product: product });
+  res.json({ products: products });
 };
 
 const createProduct = (req, res, next) => {
