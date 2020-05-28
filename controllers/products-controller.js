@@ -1,4 +1,5 @@
 const { v4: uuid } = require("uuid");
+const { validationResult } = require("express-validator");
 
 const HttpError = require("../models/http-error");
 
@@ -40,6 +41,11 @@ const getProductsByUserId = (req, res, next) => {
 };
 
 const createProduct = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    throw new HttpError("Invalid inputs passed, please check your data", 422);
+  }
+
   const { userId, title, imageUrl, description, minPrice, maxPrice } = req.body;
   const createdPlace = {
     id: uuid(),

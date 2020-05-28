@@ -1,4 +1,5 @@
 const express = require("express");
+const { check } = require("express-validator");
 
 const productsControllers = require("../controllers/products-controller");
 
@@ -8,7 +9,11 @@ router.get("/:pid", productsControllers.getProductById);
 
 router.get("/user/:uid", productsControllers.getProductsByUserId);
 
-router.post("/", productsControllers.createProduct);
+router.post(
+  "/",
+  [check("title").not().isEmpty(), check("description").not().isEmpty()],
+  productsControllers.createProduct
+);
 
 router.patch("/:pid", productsControllers.updateProduct);
 
