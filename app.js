@@ -26,7 +26,7 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect("mongodb+srv://Roy:<Password></Password>@cluster0-h3gax.mongodb.net/swapit?retryWrites=true&w=majority")
+  .connect("mongodb+srv://Roy:@cluster0-h3gax.mongodb.net/swapit?retryWrites=true&w=majority")
   .then(() => {
     app.listen(5000);
   })

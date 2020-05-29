@@ -17,16 +17,26 @@ let DUMMY_PRODUCTS = [
   },
 ];
 
-const getProductById = (req, res, next) => {
+const getProductById = async (req, res, next) => {
   const productId = req.params.pid;
-  const product = DUMMY_PRODUCTS.find((p) => p.id === productId);
 
-  if (!product) {
-    const error = new HttpError("Could not find place for product id", 404);
+  let product;
+  try {
+    product = await Product.findById(productId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a product.",
+      500
+    );
     return next(error);
   }
 
-  res.json({ product: product });
+  if (!product) {
+    const error = new HttpError("Could not find prodct for product id", 404);
+    return next(error);
+  }
+
+  res.json({ product: product.toObject({ getters: true }) });
 };
 
 const getProductsByUserId = (req, res, next) => {
@@ -34,7 +44,7 @@ const getProductsByUserId = (req, res, next) => {
   const products = DUMMY_PRODUCTS.filter((p) => p.userId === userId);
 
   if (!products || products.length === 0) {
-    const error = new HttpError("Could not find places for user id", 404);
+    const error = new HttpError("Could not find product for user id", 404);
     return next(error);
   }
 
@@ -69,7 +79,7 @@ const createProduct = async (req, res, next) => {
     createdProduct.save();
   } catch (err) {
     const error = new HttpError(
-      "Failed to create place, please try again.",
+      "Failed to create product, please try again.",
       500
     );
     return next(error);
