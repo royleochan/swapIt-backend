@@ -100,20 +100,37 @@ const createProduct = async (req, res, next) => {
   res.status(201).json(createdProduct);
 };
 
-const updateProduct = (req, res, next) => {
+const updateProduct = async (req, res, next) => {
   const { title, description, minPrice, maxPrice } = req.body;
   const productId = req.params.pid;
 
-  const updatedProduct = { ...DUMMY_PRODUCTS.find((p) => p.id === productId) };
-  const productIndex = DUMMY_PRODUCTS.findIndex((p) => p.id === productId);
-  updatedProduct.title = title;
-  updatedProduct.description = description;
-  updatedProduct.minPrice = minPrice;
-  updatedProduct.maxPrice = maxPrice;
+  let product;
+  try {
+    product = await Product.findById(productId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a product.",
+      500
+    );
+    return next(error);
+  }
 
-  DUMMY_PRODUCTS[productIndex] = updatedProduct;
+  product.title = title;
+  product.description = description;
+  product.minPrice = minPrice;
+  product.maxPrice = maxPrice;
 
-  res.status(200).json({ product: updatedProduct });
+  try {
+    await product.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update a product.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ product: product.toObject({ getters: true }) });
 };
 
 const deleteProduct = (req, res, next) => {
