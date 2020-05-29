@@ -4,19 +4,7 @@ const { validationResult } = require("express-validator");
 const HttpError = require("../models/http-error");
 const Product = require("../models/product");
 
-let DUMMY_PRODUCTS = [
-  {
-    id: "p1",
-    userId: "u1",
-    title: "White Shirt",
-    imageUrl:
-      "https://img1.g-star.com/product/c_fill,f_auto,h_630,q_80/v1586456245/D07205-124-110-Z04/g-star-raw-basic-t-shirt-2-pack-white-flat-front.jpg",
-    description: "Plain White Tee in size S! In good condition",
-    minPrice: 30,
-    maxPrice: 40,
-  },
-];
-
+// read product by product id
 const getProductById = async (req, res, next) => {
   const productId = req.params.pid;
 
@@ -39,6 +27,7 @@ const getProductById = async (req, res, next) => {
   res.json({ product: product.toObject({ getters: true }) });
 };
 
+// read products/product by user id
 const getProductsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
@@ -100,6 +89,7 @@ const createProduct = async (req, res, next) => {
   res.status(201).json(createdProduct);
 };
 
+// update product
 const updateProduct = async (req, res, next) => {
   const { title, description, minPrice, maxPrice } = req.body;
   const productId = req.params.pid;
@@ -133,9 +123,31 @@ const updateProduct = async (req, res, next) => {
   res.status(200).json({ product: product.toObject({ getters: true }) });
 };
 
-const deleteProduct = (req, res, next) => {
+// delete product
+const deleteProduct = async (req, res, next) => {
   const productId = req.params.pid;
-  DUMMY_PRODUCTS = DUMMY_PRODUCTS.filter((prod) => prod.id != productId);
+
+  let product;
+  try {
+    product = await Product.findById(productId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not delete product.",
+      500
+    );
+    return next(error);
+  }
+
+  try {
+    await Product.deleteOne(product);
+  } catch {
+    const error = new HttpError(
+      "Something went wrong, could not delete product.",
+      500
+    );
+    return next(error);
+  }
+
   res.status(200).json({ message: "Deleted Product" });
 };
 
