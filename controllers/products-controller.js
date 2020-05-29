@@ -32,23 +32,35 @@ const getProductById = async (req, res, next) => {
   }
 
   if (!product) {
-    const error = new HttpError("Could not find prodct for product id", 404);
+    const error = new HttpError("Could not find product for product id", 404);
     return next(error);
   }
 
   res.json({ product: product.toObject({ getters: true }) });
 };
 
-const getProductsByUserId = (req, res, next) => {
+const getProductsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
-  const products = DUMMY_PRODUCTS.filter((p) => p.userId === userId);
+
+  let products;
+  try {
+    products = await Product.find({ creator: userId });
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching products failed, please try again later",
+      500
+    );
+    return next(error);
+  }
 
   if (!products || products.length === 0) {
     const error = new HttpError("Could not find product for user id", 404);
     return next(error);
   }
 
-  res.json({ products: products });
+  res.json({
+    products: products.map((product) => product.toObject({ getters: true })),
+  });
 };
 
 const createProduct = async (req, res, next) => {
