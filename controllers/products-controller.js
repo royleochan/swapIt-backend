@@ -2,6 +2,7 @@ const { v4: uuid } = require("uuid");
 const { validationResult } = require("express-validator");
 
 const HttpError = require("../models/http-error");
+const Product = require("../models/product");
 
 let DUMMY_PRODUCTS = [
   {
@@ -40,26 +41,41 @@ const getProductsByUserId = (req, res, next) => {
   res.json({ products: products });
 };
 
-const createProduct = (req, res, next) => {
+const createProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new HttpError("Invalid inputs passed, please check your data", 422);
   }
 
-  const { userId, title, imageUrl, description, minPrice, maxPrice } = req.body;
-  const createdPlace = {
-    id: uuid(),
-    userId,
+  const {
     title,
     imageUrl,
     description,
     minPrice,
     maxPrice,
-  };
+    creator,
+  } = req.body;
 
-  DUMMY_PRODUCTS.push(createProduct);
+  const createdProduct = new Product({
+    title,
+    imageUrl,
+    description,
+    maxPrice,
+    minPrice,
+    creator,
+  });
 
-  res.status(201).json(createdPlace);
+  try {
+    createdProduct.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Failed to create place, please try again.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(201).json(createdProduct);
 };
 
 const updateProduct = (req, res, next) => {
