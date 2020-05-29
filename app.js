@@ -5,12 +5,14 @@ const mongoose = require("mongoose");
 const HttpError = require("./models/http-error");
 
 const productRoutes = require("./routes/products-routes");
+const usersRoutes = require("./routes/users-routes");
 
 const app = express();
 
 app.use(bodyParser.json());
 
 app.use("/api/products", productRoutes);
+app.use("/api/users", usersRoutes);
 
 app.use((req, res, next) => {
   const error = new HttpError("Could not find route", 404);
@@ -26,7 +28,13 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect("mongodb+srv://Roy:@cluster0-h3gax.mongodb.net/swapit?retryWrites=true&w=majority")
+  .connect(
+    "mongodb+srv://Roy:@cluster0-h3gax.mongodb.net/swapit?retryWrites=true&w=majority",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
   .then(() => {
     app.listen(5000);
   })
