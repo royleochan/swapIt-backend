@@ -1,5 +1,6 @@
 const { v4: uuid } = require("uuid");
 const { validationResult } = require("express-validator");
+const mongoose = require("mongoose");
 
 const HttpError = require("../models/http-error");
 const Product = require("../models/product");
@@ -109,7 +110,7 @@ const createProduct = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(201).json(createdProduct);
+  res.status(201).json({ product: createdProduct });
 };
 
 // update product
