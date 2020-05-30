@@ -60,7 +60,7 @@ const signup = async (req, res, next) => {
 
   let existingUser;
   try {
-    existingUser = await User.findOne({ emai: email });
+    existingUser = await User.findOne({ email: email });
   } catch (err) {
     const error = new HttpError(
       "Signing up failed, please try again later.",
@@ -98,7 +98,28 @@ const signup = async (req, res, next) => {
   res.status(201).json({ user: createdUser.toObject({ getters: true }) });
 };
 
-const login = (req, res, next) => {};
+const login = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  let existingUser;
+
+  try {
+    existingUser = await User.findOne({ email: email });
+  } catch (err) {
+    const error = new HttpError(
+      "Logging in failed, please try again later.",
+      500
+    );
+    return next(error);
+  }
+
+  if (!existingUser || existingUser.password !== password) {
+    const error = new HttpError("Invalid credentials, could not log in", 401);
+    return next(error);
+  }
+
+  res.status(200).json({ message: "Logged in!" });
+};
 
 exports.getUsers = getUsers;
 exports.getUserById = getUserById;
