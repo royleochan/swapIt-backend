@@ -33,9 +33,9 @@ const getProductById = async (req, res, next) => {
 const getProductsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
-  let products;
+  let userWithProducts;
   try {
-    products = await Product.find({ creator: userId });
+    userWithProducts = await User.findById(userId).populate("products");
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later",
@@ -44,13 +44,15 @@ const getProductsByUserId = async (req, res, next) => {
     return next(error);
   }
 
-  if (!products || products.length === 0) {
+  if (!userWithProducts || userWithProducts.products.length === 0) {
     const error = new HttpError("Could not find product for user id", 404);
     return next(error);
   }
 
   res.json({
-    products: products.map((product) => product.toObject({ getters: true })),
+    products: userWithProducts.products.map((product) =>
+      product.toObject({ getters: true })
+    ),
   });
 };
 
@@ -84,7 +86,10 @@ const createProduct = async (req, res, next) => {
   try {
     user = await User.findById(creator);
   } catch (err) {
-    const error = new HttpError("Creating product failed, please try again", 500);
+    const error = new HttpError(
+      "Creating product failed, please try again",
+      500
+    );
     return next(error);
   }
 
