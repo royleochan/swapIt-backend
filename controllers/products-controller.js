@@ -3,6 +3,7 @@ const { validationResult } = require("express-validator");
 
 const HttpError = require("../models/http-error");
 const Product = require("../models/product");
+const User = require("../models/user");
 
 // read product by product id
 const getProductById = async (req, res, next) => {
@@ -52,6 +53,7 @@ const getProductsByUserId = async (req, res, next) => {
   });
 };
 
+// create product
 const createProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -76,8 +78,29 @@ const createProduct = async (req, res, next) => {
     creator,
   });
 
+  let user;
+
   try {
-    createdProduct.save();
+    user = await User.findById(creator);
+  } catch (err) {
+    const error = new HttpError("Creating place failed, please try again", 500);
+    return next(error);
+  }
+
+  if (!user) {
+    const error = new HttpError("Could not find user for provided id", 404);
+    return next(error);
+  }
+
+  console.log(user);
+
+  try {
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await createdProduct.save({ session: sess });
+    user.products.push(createdProduct);
+    await user.save({ session: sess });
+    await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
       "Failed to create product, please try again.",
