@@ -8,7 +8,7 @@ const productSchema = new Schema({
   imageUrl: { type: String, required: true },
   maxPrice: { type: Number, required: true },
   minPrice: { type: Number, required: true },
-  creator: { type: String, required: true },
+  creator: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
 });
 
 module.exports = mongoose.model("Product", productSchema);

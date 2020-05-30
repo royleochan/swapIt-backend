@@ -10,6 +10,7 @@ const userSchema = new Schema({
   profilePic: { type: String, required: true },
   description: { type: String, required: true },
   location: { type: String, required: true },
+  products: { type: mongoose.Types.ObjectId, required: true, ref: "Product" },
 });
 
 module.exports = mongoose.model("User", userSchema);
