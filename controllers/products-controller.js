@@ -84,7 +84,7 @@ const createProduct = async (req, res, next) => {
   try {
     user = await User.findById(creator);
   } catch (err) {
-    const error = new HttpError("Creating place failed, please try again", 500);
+    const error = new HttpError("Creating product failed, please try again", 500);
     return next(error);
   }
 
@@ -153,7 +153,7 @@ const deleteProduct = async (req, res, next) => {
 
   let product;
   try {
-    product = await Product.findById(productId);
+    product = await Product.findById(productId).populate("creator");
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not delete product.",
@@ -162,8 +162,18 @@ const deleteProduct = async (req, res, next) => {
     return next(error);
   }
 
+  if (!product) {
+    const error = new HttpError("Could not find product for this id", 404);
+    return next(error);
+  }
+
   try {
-    await Product.deleteOne(product);
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await product.remove({ session: sess });
+    product.creator.products.pull(product);
+    await product.creator.save({ session: sess });
+    await sess.commitTransaction();
   } catch {
     const error = new HttpError(
       "Something went wrong, could not delete product.",

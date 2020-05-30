@@ -49,7 +49,7 @@ const signup = async (req, res, next) => {
     description,
     location,
     password,
-    places: [],
+    products: [],
   });
 
   try {
