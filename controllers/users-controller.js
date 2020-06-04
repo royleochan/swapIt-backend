@@ -110,18 +110,13 @@ const signup = async (req, res, next) => {
 
   let token;
   try {
-    token = jwt.sign(
-      { userId: createdUser.id, email: createdUser.email },
-      "SECRET_KEY"
-    );
+    token = jwt.sign({ user: createdUser }, "SECRET_KEY");
   } catch (err) {
     const error = new HttpError("Signing up failed, please try again", 500);
     return next(error);
   }
 
-  res
-    .status(201)
-    .json({ userId: createdUser.id, email: createdUser.email, token: token });
+  res.status(201).json({ user: existingUser.toObject({ getters: true }), token: token });
 };
 
 const login = async (req, res, next) => {
@@ -162,18 +157,18 @@ const login = async (req, res, next) => {
 
   let token;
   try {
-    token = jwt.sign(
-      { userId: existingUser.id, email: existingUser.email },
-      "SECRET_KEY"
-    );
+    token = jwt.sign({ user: existingUser }, "SECRET_KEY");
   } catch (err) {
-    const error = new HttpError("Logging in failed, please try again later.", 500);
+    const error = new HttpError(
+      "Logging in failed, please try again later.",
+      500
+    );
     return next(error);
   }
 
   res
     .status(200)
-    .json({ userId: existingUser.id, email: existingUser.email, token: token });
+    .json({ user: existingUser.toObject({ getters: true }), token: token });
 };
 
 exports.getUsers = getUsers;
