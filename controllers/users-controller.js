@@ -8,7 +8,7 @@ const getUsers = async (req, res, next) => {
   try {
     users = await User.find(
       {},
-      "userName email name description location products"
+      "username email name description location products"
     );
   } catch (err) {
     const error = new HttpError(
@@ -52,7 +52,7 @@ const signup = async (req, res, next) => {
     name,
     email,
     password,
-    userName,
+    username,
     profilePic,
     description,
     location,
@@ -79,7 +79,7 @@ const signup = async (req, res, next) => {
 
   const createdUser = new User({
     name,
-    userName,
+    username,
     email,
     profilePic,
     description,
@@ -99,12 +99,12 @@ const signup = async (req, res, next) => {
 };
 
 const login = async (req, res, next) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
 
   let existingUser;
 
   try {
-    existingUser = await User.findOne({ email: email });
+    existingUser = await User.findOne({ username: username });
   } catch (err) {
     const error = new HttpError(
       "Logging in failed, please try again later.",
