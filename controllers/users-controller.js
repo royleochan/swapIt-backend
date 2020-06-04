@@ -113,8 +113,12 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  if (!existingUser || existingUser.password !== password) {
-    const error = new HttpError("Invalid credentials, could not log in", 401);
+  if (!existingUser) {
+    const error = new HttpError("USERNAME_NOT_FOUND", 401);
+    return next(error);
+  }
+  if (existingUser.password !== password) {
+    const error = new HttpError("INVALID_PASSWORD", 401);
     return next(error);
   }
 
