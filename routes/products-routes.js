@@ -17,6 +17,8 @@ router.post(
 
 router.patch("/:pid", productsControllers.updateProduct);
 
+router.patch("/like/:pid", productsControllers.likeProduct);
+
 router.delete("/:pid", productsControllers.deleteProduct);
 
 module.exports = router;

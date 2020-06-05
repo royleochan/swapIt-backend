@@ -79,6 +79,7 @@ const createProduct = async (req, res, next) => {
     maxPrice,
     minPrice,
     creator,
+    likes: [],
   });
 
   let user;
@@ -190,8 +191,45 @@ const deleteProduct = async (req, res, next) => {
   res.status(200).json({ message: "Deleted Product" });
 };
 
+// like product
+const likeProduct = async (req, res, next) => {
+  const { user } = req.body;
+  const productId = req.params.pid;
+
+  let product;
+  try {
+    product = await Product.findById(productId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not delete product.",
+      500
+    );
+    return next(error);
+  }
+
+  if (!product) {
+    const error = new HttpError("Could not find product for this id", 404);
+    return next(error);
+  }
+
+  product.likes.push(user);
+
+  try {
+    await product.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Could not like item, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ message: "Liked Product" });
+};
+
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.createProduct = createProduct;
 exports.updateProduct = updateProduct;
 exports.deleteProduct = deleteProduct;
+exports.likeProduct = likeProduct;
