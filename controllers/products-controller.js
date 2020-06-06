@@ -116,7 +116,7 @@ const createProduct = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(201).json({ product: createdProduct });
+  res.status(201).json({ product: createdProduct.toObject({ getters: true }) });
 };
 
 // update product
