@@ -227,9 +227,46 @@ const likeProduct = async (req, res, next) => {
   res.status(200).json({ message: "Liked Product" });
 };
 
+// unlike product
+const unlikeProduct = async (req, res, next) => {
+  const { user } = req.body;
+  const productId = req.params.pid;
+
+  let product;
+  try {
+    product = await Product.findById(productId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not delete product.",
+      500
+    );
+    return next(error);
+  }
+
+  if (!product) {
+    const error = new HttpError("Could not find product for this id", 404);
+    return next(error);
+  }
+
+  product.likes.pull(user);
+
+  try {
+    await product.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Could not unlike item, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ message: "unLiked Product" });
+};
+
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.createProduct = createProduct;
 exports.updateProduct = updateProduct;
 exports.deleteProduct = deleteProduct;
 exports.likeProduct = likeProduct;
+exports.unlikeProduct = unlikeProduct;
