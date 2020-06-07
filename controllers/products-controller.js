@@ -56,6 +56,32 @@ const getProductsByUserId = async (req, res, next) => {
   });
 };
 
+// read products/product by user id
+const getAllProducts = async (req, res, next) => {
+  const userId = req.params.uid;
+
+  let availableProducts;
+  try {
+    availableProducts = await Product.find({ creator: { $ne: userId } });
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching products failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  console.log(availableProducts);
+  if (!availableProducts || availableProducts.length === 0) {
+    const error = new HttpError("Could not find any products", 404);
+    return next(error);
+  }
+
+  res.json({
+    message: "success",
+  });
+};
+
 // create product
 const createProduct = async (req, res, next) => {
   const errors = validationResult(req);
@@ -265,6 +291,7 @@ const unlikeProduct = async (req, res, next) => {
 
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
+exports.getAllProducts = getAllProducts;
 exports.createProduct = createProduct;
 exports.updateProduct = updateProduct;
 exports.deleteProduct = deleteProduct;

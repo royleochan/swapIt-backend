@@ -9,6 +9,8 @@ router.get("/:pid", productsControllers.getProductById);
 
 router.get("/user/:uid", productsControllers.getProductsByUserId);
 
+router.get("/user/all/:uid", productsControllers.getAllProducts);
+
 router.post(
   "/",
   [check("title").not().isEmpty(), check("description").not().isEmpty()],
