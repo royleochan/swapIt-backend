@@ -78,8 +78,8 @@ const getAllProducts = async (req, res, next) => {
 
   res.status(200).json({
     products: availableProducts.map((product) =>
-    product.toObject({ getters: true })
-  ),
+      product.toObject({ getters: true })
+    ),
   });
 };
 
@@ -220,7 +220,7 @@ const deleteProduct = async (req, res, next) => {
 
 // like product
 const likeProduct = async (req, res, next) => {
-  const { user } = req.body;
+  const { userId } = req.body;
   const productId = req.params.pid;
 
   let product;
@@ -239,10 +239,27 @@ const likeProduct = async (req, res, next) => {
     return next(error);
   }
 
-  product.likes.push(user);
+  product.likes.push(userId);
+
+  let user;
+  try {
+    user = await User.findById(userId);
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching user failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  if (!user) {
+    const error = new HttpError("Could not find user for this user id", 404);
+    return next(error);
+  }
 
   try {
     await product.save();
+    user = await User.findById(userId);
   } catch (err) {
     const error = new HttpError(
       "Could not like item, please try again later",
@@ -251,7 +268,7 @@ const likeProduct = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(200).json({ message: "Liked Product" });
+  res.status(200).json({ message: "Liked Product", user });
 };
 
 // unlike product
