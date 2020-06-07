@@ -71,14 +71,15 @@ const getAllProducts = async (req, res, next) => {
     return next(error);
   }
 
-  console.log(availableProducts);
   if (!availableProducts || availableProducts.length === 0) {
     const error = new HttpError("Could not find any products", 404);
     return next(error);
   }
 
-  res.json({
-    message: "success",
+  res.status(200).json({
+    products: availableProducts.map((product) =>
+    product.toObject({ getters: true })
+  ),
   });
 };
 
