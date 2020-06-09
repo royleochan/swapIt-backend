@@ -7,6 +7,8 @@ const router = express.Router();
 
 router.get("/:pid", productsControllers.getProductById);
 
+router.post("/search", productsControllers.searchForProducts);
+
 router.get("/user/:uid", productsControllers.getProductsByUserId);
 
 router.get("/user/all/:uid", productsControllers.getAllProducts);
