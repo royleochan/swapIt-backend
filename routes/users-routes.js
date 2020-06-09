@@ -9,6 +9,8 @@ router.get("/", usersController.getUsers);
 
 router.get("/:uid", usersController.getUserById);
 
+router.get("/search/:query", usersController.searchForUsers);
+
 router.post(
   "/signup",
   [

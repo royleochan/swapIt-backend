@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken");
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
 
+const userPipeline = require("../controllers/pipelines/user-search");
+
 const getUsers = async (req, res, next) => {
   let users;
   try {
@@ -41,6 +43,34 @@ const getUserById = async (req, res, next) => {
   }
 
   res.json({ user: user.toObject({ getters: true }) });
+};
+
+const searchForUsers = async (req, res, next) => {
+  const query = req.params.query;
+  userPipeline[0].$search.text.query = query;
+
+  let aggCursor;
+  try {
+    aggCursor = await User.aggregate(userPipeline);
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching users failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  const searchedUsers = [];
+  aggCursor.forEach((user) => searchedUsers.push(user));
+
+  if (searchedUsers.length === 0) {
+    const error = new HttpError("Could not find any users", 404);
+    return next(error);
+  }
+
+  res.status(200).json({
+    users: searchedUsers,
+  });
 };
 
 const signup = async (req, res, next) => {
@@ -116,7 +146,9 @@ const signup = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(201).json({ user: existingUser.toObject({ getters: true }), token: token });
+  res
+    .status(201)
+    .json({ user: existingUser.toObject({ getters: true }), token: token });
 };
 
 const login = async (req, res, next) => {
@@ -173,5 +205,6 @@ const login = async (req, res, next) => {
 
 exports.getUsers = getUsers;
 exports.getUserById = getUserById;
+exports.searchForUsers = searchForUsers;
 exports.signup = signup;
 exports.login = login;

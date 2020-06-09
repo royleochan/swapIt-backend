@@ -13,4 +13,3 @@ module.exports = [
   },
 ];
 
-exports.userPipeline = userPipeline;
