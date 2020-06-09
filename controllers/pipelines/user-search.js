@@ -11,13 +11,6 @@ module.exports = [
       },
     },
   },
-  {
-    $project: {
-      score: {
-        $meta: "searchScore",
-      },
-    },
-  },
 ];
 
 exports.userPipeline = userPipeline;

@@ -10,18 +10,6 @@ module.exports = productPipeline = [
         },
       },
     },
-  },
-  {
-    $project: {
-      score: {
-        $meta: "searchScore",
-      },
-    },
-  },
-  {
-    $sort: {
-      score: -1,
-    },
-  },
+  }
 ];
 
