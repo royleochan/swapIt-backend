@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const HttpError = require("../models/http-error");
 const Product = require("../models/product");
 const User = require("../models/user");
+const productPipeline = require("../controllers/pipelines/products-search");
 
 // read product by product id
 const getProductById = async (req, res, next) => {
@@ -80,6 +81,35 @@ const getAllProducts = async (req, res, next) => {
     products: availableProducts.map((product) =>
       product.toObject({ getters: true })
     ),
+  });
+};
+
+// search for products
+const searchForProducts = async (req, res, next) => {
+  const query = req.params.query;
+  productPipeline[0].$search.text.query = query;
+
+  let aggCursor;
+  try {
+    aggCursor = await Product.aggregate(productPipeline);
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching products failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  const searchedProducts = [];
+  aggCursor.forEach((product) => searchedProducts.push(product));
+
+  if (searchedProducts.length === 0) {
+    const error = new HttpError("Could not find any products", 404);
+    return next(error);
+  }
+
+  res.status(200).json({
+    products: searchedProducts,
   });
 };
 
@@ -310,6 +340,7 @@ const unlikeProduct = async (req, res, next) => {
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.getAllProducts = getAllProducts;
+exports.searchForProducts = searchForProducts;
 exports.createProduct = createProduct;
 exports.updateProduct = updateProduct;
 exports.deleteProduct = deleteProduct;
