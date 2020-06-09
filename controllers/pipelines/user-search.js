@@ -1,4 +1,4 @@
-const userPipeline = [
+module.exports = [
   {
     $search: {
       text: {

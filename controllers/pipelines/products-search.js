@@ -1,4 +1,4 @@
-const productPipeline = [
+module.exports = productPipeline = [
   {
     $search: {
       text: {
@@ -25,4 +25,3 @@ const productPipeline = [
   },
 ];
 
-exports.productPipeline = productPipeline;
