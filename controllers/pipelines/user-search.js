@@ -5,7 +5,7 @@ module.exports = [
         path: ["name", "username"],
         query: "leoroyy",
         fuzzy: {
-          maxEdits: 2,
+          maxEdits: 1,
           maxExpansions: 100,
         },
       },
