@@ -303,7 +303,7 @@ const likeProduct = async (req, res, next) => {
 
 // unlike product
 const unlikeProduct = async (req, res, next) => {
-  const { user } = req.body;
+  const { userId } = req.body;
   const productId = req.params.pid;
 
   let product;
@@ -322,7 +322,7 @@ const unlikeProduct = async (req, res, next) => {
     return next(error);
   }
 
-  product.likes.pull(user);
+  product.likes.pull(userId);
 
   try {
     await product.save();
