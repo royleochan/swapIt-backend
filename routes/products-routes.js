@@ -23,7 +23,7 @@ router.patch("/:pid", productsControllers.updateProduct);
 
 router.patch("/like/:pid", productsControllers.likeProduct);
 
-router.delete("/like/:pid", productsControllers.unlikeProduct);
+router.patch("/unlike/:pid", productsControllers.unlikeProduct);
 
 router.delete("/:pid", productsControllers.deleteProduct);
 
