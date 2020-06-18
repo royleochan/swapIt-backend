@@ -178,7 +178,7 @@ const createProduct = async (req, res, next) => {
 
 // update product
 const updateProduct = async (req, res, next) => {
-  const { title, description, minPrice, maxPrice } = req.body;
+  const { title, description, minPrice, maxPrice, imageUrl } = req.body;
   const productId = req.params.pid;
 
   let product;
@@ -196,6 +196,7 @@ const updateProduct = async (req, res, next) => {
   product.description = description;
   product.minPrice = minPrice;
   product.maxPrice = maxPrice;
+  product.imageUrl = imageUrl;
 
   try {
     await product.save();
