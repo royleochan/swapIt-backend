@@ -6,6 +6,7 @@ const HttpError = require("../models/http-error");
 const User = require("../models/user");
 
 const userPipeline = require("../controllers/pipelines/user-search");
+const Product = require("../models/product");
 
 const getUsers = async (req, res, next) => {
   let users;
@@ -22,6 +23,21 @@ const getUsers = async (req, res, next) => {
     return next(error);
   }
   res.json({ users: users.map((user) => user.toObject({ getters: true })) });
+};
+
+const getLikedUsers = async (req, res, next) => {
+  const prodId = req.params.pid;
+  let users;
+  try {
+    users = await Product.findById(prodId, "likes");
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching users failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+  res.json({ users });
 };
 
 const getUserById = async (req, res, next) => {
@@ -148,7 +164,7 @@ const signup = async (req, res, next) => {
 
   res
     .status(201)
-    .json({ user: existingUser.toObject({ getters: true }), token: token });
+    .json({ user: createdUser.toObject({ getters: true }), token: token });
 };
 
 const login = async (req, res, next) => {
@@ -204,6 +220,7 @@ const login = async (req, res, next) => {
 };
 
 exports.getUsers = getUsers;
+exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
 exports.searchForUsers = searchForUsers;
 exports.signup = signup;
