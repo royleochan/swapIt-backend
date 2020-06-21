@@ -7,9 +7,9 @@ const userSchema = new Schema({
   email: { type: String, required: true },
   password: { type: String, required: true },
   name: { type: String, required: true },
-  profilePic: { type: String, required: true },
-  description: { type: String, required: true },
-  location: { type: String, required: true },
+  profilePic: { type: String },
+  description: { type: String },
+  location: { type: String },
   products: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
 });
 
