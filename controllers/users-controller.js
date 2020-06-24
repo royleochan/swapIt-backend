@@ -156,7 +156,7 @@ const signup = async (req, res, next) => {
 
   let token;
   try {
-    token = jwt.sign({ user: createdUser }, "SECRET_KEY");
+    token = jwt.sign({ user: createdUser }, `${process.env.SECRET_KEY}`);
   } catch (err) {
     const error = new HttpError("Signing up failed, please try again", 500);
     return next(error);
@@ -205,7 +205,7 @@ const login = async (req, res, next) => {
 
   let token;
   try {
-    token = jwt.sign({ user: existingUser }, "SECRET_KEY");
+    token = jwt.sign({ user: existingUser }, `${process.env.SECRET_KEY}`);
   } catch (err) {
     const error = new HttpError(
       "Logging in failed, please try again later.",
