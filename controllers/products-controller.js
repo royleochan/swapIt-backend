@@ -46,10 +46,10 @@ const getProductsByUserId = async (req, res, next) => {
   }
 
   if (!userWithProducts || userWithProducts.products.length === 0) {
-    const error = new HttpError("Could not find product for user id", 404);
+    const error = new HttpError("Could not find products for user id", 404);
     return next(error);
   }
-
+ 
   res.json({
     products: userWithProducts.products.map((product) =>
       product.toObject({ getters: true })

@@ -11,6 +11,7 @@ const userSchema = new Schema({
   description: { type: String },
   location: { type: String },
   products: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
+  reviews: [{ type: mongoose.Types.ObjectId, required: true, ref: "Review" }],
 });
 
 module.exports = mongoose.model("User", userSchema);
