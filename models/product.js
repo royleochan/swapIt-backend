@@ -6,8 +6,8 @@ const productSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   imageUrl: { type: String, required: true },
-  maxPrice: { type: Number, required: true },
-  minPrice: { type: Number, required: true },
+  price: { type: Number, required: true },
+  allowance: { type: Number, required: true },
   creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
   likes: [{ type: mongoose.Types.ObjectId, ref: "User" }],
 });
