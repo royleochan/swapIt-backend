@@ -7,6 +7,7 @@ const User = require("../models/user");
 
 const userPipeline = require("../controllers/pipelines/user-search");
 const Product = require("../models/product");
+const Review = require("../models/review");
 
 const getUsers = async (req, res, next) => {
   let users;
@@ -58,7 +59,18 @@ const getUserById = async (req, res, next) => {
     return next(error);
   }
 
-  res.json({ user: user.toObject({ getters: true }) });
+  // calculate review rating
+  let reviewRating = 0;
+  for (let index = 0; index < user.reviews.length; index++) {
+    const reviewId = user.reviews[index];
+    const review = await Review.findById(reviewId);
+    reviewRating += review.rating;
+  }
+  reviewRating = reviewRating / user.reviews.length;
+
+  user.reviewRating = reviewRating;
+
+  res.json({ user: user.toObject({ getters: true }), reviewRating });
 };
 
 const searchForUsers = async (req, res, next) => {
@@ -77,12 +89,27 @@ const searchForUsers = async (req, res, next) => {
   }
 
   const searchedUsers = [];
-  aggCursor.forEach((user) => searchedUsers.push(user));
+  aggCursor.forEach((user) => {
+    searchedUsers.push(user);
+  });
 
   if (searchedUsers.length === 0) {
     const error = new HttpError("Could not find any users", 404);
     return next(error);
   }
+
+  await Promise.all(
+    searchedUsers.map(async (user) => {
+      // calculate review rating
+      let reviewRating = 0;
+      for (let index = 0; index < user.reviews.length; index++) {
+        const reviewId = user.reviews[index];
+        const review = await Review.findById(reviewId);
+        reviewRating += review.rating;
+      }
+      user.reviewRating = reviewRating / user.reviews.length;
+    })
+  );
 
   res.status(200).json({
     users: searchedUsers,
@@ -214,9 +241,20 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  res
-    .status(200)
-    .json({ user: existingUser.toObject({ getters: true }), token: token });
+  // calculate review rating
+  let reviewRating = 0;
+  for (let index = 0; index < existingUser.reviews.length; index++) {
+    const reviewId = existingUser.reviews[index];
+    const review = await Review.findById(reviewId);
+    reviewRating += review.rating;
+  }
+  reviewRating = reviewRating / existingUser.reviews.length;
+
+  res.status(200).json({
+    user: existingUser.toObject({ getters: true }),
+    token: token,
+    reviewRating,
+  });
 };
 
 exports.getUsers = getUsers;
