@@ -14,6 +14,15 @@ router.get("/:uid", usersController.getUserById);
 router.get("/search/:query", usersController.searchForUsers);
 
 router.post(
+  "/check",
+  [
+    check("email").normalizeEmail().isEmail(),
+    check("username").isLength({ max: 15 }),
+  ],
+  usersController.signupValidation
+);
+
+router.post(
   "/signup",
   [
     check("name").not().isEmpty(),

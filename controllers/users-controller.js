@@ -116,6 +116,41 @@ const searchForUsers = async (req, res, next) => {
   });
 };
 
+const checkUsernameAndEmail = async (req, res, next) => {
+  const { username, email } = req.body;
+
+  let existingEmail;
+  let existingUsername;
+  try {
+    existingEmail = await User.findOne({ email: email });
+    existingUsername = await User.findOne({ username: username });
+  } catch (err) {
+    const error = new HttpError(
+      "Signing up failed, please try again later.",
+      500
+    );
+    return next(error);
+  }
+
+  if (existingEmail) {
+    const error = new HttpError(
+      "Account with email already exists, try logging in.",
+      422
+    );
+    return next(error);
+  }
+
+  if (existingUsername) {
+    const error = new HttpError(
+      "Account with username already exists, use another username.",
+      422
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ message: "Passed username and email check" });
+};
+
 const signup = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -263,5 +298,6 @@ exports.getUsers = getUsers;
 exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
 exports.searchForUsers = searchForUsers;
+exports.signupValidation = checkUsernameAndEmail;
 exports.signup = signup;
 exports.login = login;
