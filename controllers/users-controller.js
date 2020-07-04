@@ -59,18 +59,7 @@ const getUserById = async (req, res, next) => {
     return next(error);
   }
 
-  // calculate review rating
-  let reviewRating = 0;
-  for (let index = 0; index < user.reviews.length; index++) {
-    const reviewId = user.reviews[index];
-    const review = await Review.findById(reviewId);
-    reviewRating += review.rating;
-  }
-  reviewRating = reviewRating / user.reviews.length;
-
-  user.reviewRating = reviewRating;
-
-  res.json({ user: user.toObject({ getters: true }), reviewRating });
+  res.json({ user: user.toObject({ getters: true }) });
 };
 
 const searchForUsers = async (req, res, next) => {
@@ -97,19 +86,6 @@ const searchForUsers = async (req, res, next) => {
     const error = new HttpError("Could not find any users", 404);
     return next(error);
   }
-
-  await Promise.all(
-    searchedUsers.map(async (user) => {
-      // calculate review rating
-      let reviewRating = 0;
-      for (let index = 0; index < user.reviews.length; index++) {
-        const reviewId = user.reviews[index];
-        const review = await Review.findById(reviewId);
-        reviewRating += review.rating;
-      }
-      user.reviewRating = reviewRating / user.reviews.length;
-    })
-  );
 
   res.status(200).json({
     users: searchedUsers,
@@ -278,19 +254,9 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  // calculate review rating
-  let reviewRating = 0;
-  for (let index = 0; index < existingUser.reviews.length; index++) {
-    const reviewId = existingUser.reviews[index];
-    const review = await Review.findById(reviewId);
-    reviewRating += review.rating;
-  }
-  reviewRating = reviewRating / existingUser.reviews.length;
-
   res.status(200).json({
     user: existingUser.toObject({ getters: true }),
     token: token,
-    reviewRating,
   });
 };
 
