@@ -260,6 +260,40 @@ const login = async (req, res, next) => {
   });
 };
 
+const updateUser = async (req, res, next) => {
+  const { name, username, profilePic, description, location } = req.body;
+  const userId = req.params.uid;
+
+  let user;
+  try {
+    user = await User.findById(userId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a user.",
+      500
+    );
+    return next(error);
+  }
+
+  user.name = name;
+  user.username = username;
+  user.profilePic = profilePic;
+  user.description = description;
+  user.location = location;
+
+  try {
+    await user.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update a user.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ user: user.toObject({ getters: true }) });
+};
+
 exports.getUsers = getUsers;
 exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
@@ -267,3 +301,4 @@ exports.searchForUsers = searchForUsers;
 exports.signupValidation = checkUsernameAndEmail;
 exports.signup = signup;
 exports.login = login;
+exports.updateUser = updateUser;
