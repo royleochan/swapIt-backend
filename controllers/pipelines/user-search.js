@@ -1,15 +1,26 @@
-module.exports = [
+const namePipeline = [
   {
     $search: {
-      text: {
-        path: ["name", "username"],
-        query: "leoroyy",
-        fuzzy: {
-          maxEdits: 1,
-          maxExpansions: 100,
-        },
+      autocomplete: {
+        query: "des",
+        path: "name",
+        tokenOrder: "any",
       },
     },
   },
 ];
 
+const usernamePipeline = [
+  {
+    $search: {
+      autocomplete: {
+        query: "des",
+        path: "username",
+        tokenOrder: "any",
+      },
+    },
+  },
+];
+
+exports.namePipeline = namePipeline
+exports.usernamePipeline = usernamePipeline

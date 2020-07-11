@@ -64,11 +64,12 @@ const getUserById = async (req, res, next) => {
 
 const searchForUsers = async (req, res, next) => {
   const query = req.params.query;
-  userPipeline[0].$search.text.query = query;
+  userPipeline.namePipeline[0].$search.autocomplete.query = query;
 
+  // atlas autocomplete search on name field
   let aggCursor;
   try {
-    aggCursor = await User.aggregate(userPipeline);
+    aggCursor = await User.aggregate(userPipeline.namePipeline);
   } catch (err) {
     const error = new HttpError(
       "Fetching users failed, please try again later",
@@ -82,10 +83,27 @@ const searchForUsers = async (req, res, next) => {
     searchedUsers.push(user);
   });
 
+  // atlas autocomplete search on username field
+  // userPipeline.usernamePipeline[0].$search.autocomplete.query = query;
+  // try {
+  //   aggCursor = await User.aggregate(userPipeline.usernamePipeline);
+  // } catch (err) {
+  //   const error = new HttpError(
+  //     "Fetching users failed, please try again later",
+  //     500
+  //   );
+  //   return next(error);
+  // }
+  // aggCursor.forEach((user) => {
+  //   searchedUsers.push(user);
+  // });
+
   if (searchedUsers.length === 0) {
     const error = new HttpError("Could not find any users", 404);
     return next(error);
   }
+
+  console.log(searchedUsers);
 
   res.status(200).json({
     users: searchedUsers,
