@@ -36,7 +36,8 @@ const getProductsByUserId = async (req, res, next) => {
 
   let userWithProducts;
   try {
-    userWithProducts = await User.findById(userId).populate("products");
+    userWithProducts = await User.findById(userId)
+      .populate({ path: 'products', populate: 'creator' })
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later",
@@ -49,7 +50,7 @@ const getProductsByUserId = async (req, res, next) => {
     const error = new HttpError("Could not find products for user id", 404);
     return next(error);
   }
- 
+
   res.json({
     products: userWithProducts.products.map((product) =>
       product.toObject({ getters: true })
@@ -120,14 +121,7 @@ const createProduct = async (req, res, next) => {
     throw new HttpError("Invalid inputs passed, please check your data", 422);
   }
 
-  const {
-    title,
-    imageUrl,
-    description,
-    price,
-    allowance,
-    creator,
-  } = req.body;
+  const { title, imageUrl, description, price, allowance, creator } = req.body;
 
   const createdProduct = new Product({
     title,
@@ -275,6 +269,7 @@ const likeProduct = async (req, res, next) => {
   let user;
   try {
     user = await User.findById(userId);
+    user.likes.push(product._id);
   } catch (err) {
     const error = new HttpError(
       "Fetching user failed, please try again later",
@@ -290,7 +285,7 @@ const likeProduct = async (req, res, next) => {
 
   try {
     await product.save();
-    user = await User.findById(userId);
+    await user.save();
   } catch (err) {
     const error = new HttpError(
       "Could not like item, please try again later",
@@ -325,8 +320,26 @@ const unlikeProduct = async (req, res, next) => {
 
   product.likes.pull(userId);
 
+  let user;
+  try {
+    user = await User.findById(userId);
+    user.likes.pull(product._id);
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching user failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  if (!user) {
+    const error = new HttpError("Could not find user for this user id", 404);
+    return next(error);
+  }
+
   try {
     await product.save();
+    await user.save();
   } catch (err) {
     const error = new HttpError(
       "Could not unlike item, please try again later",
@@ -338,6 +351,34 @@ const unlikeProduct = async (req, res, next) => {
   res.status(200).json({ message: "unLiked Product" });
 };
 
+const getLikedProducts = async (req, res, next) => {
+  console.log("hi");
+  const userId = req.params.uid;
+
+  let userWithLikes;
+  try {
+    userWithLikes = await User.findById(userId).populate("likes");
+    console.log(userWithLikes);
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching liked products failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  if (!userWithLikes || userWithLikes.likes.length === 0) {
+    const error = new HttpError("Could not find likes for user id", 404);
+    return next(error);
+  }
+
+  res.json({
+    data: userWithLikes.likes.map((likedProduct) =>
+      likedProduct.toObject({ getters: true })
+    ),
+  });
+};
+
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.getAllProducts = getAllProducts;
@@ -347,3 +388,4 @@ exports.updateProduct = updateProduct;
 exports.deleteProduct = deleteProduct;
 exports.likeProduct = likeProduct;
 exports.unlikeProduct = unlikeProduct;
+exports.getLikedProducts = getLikedProducts;

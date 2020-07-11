@@ -12,6 +12,7 @@ const userSchema = new Schema({
   location: { type: String },
   products: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
   reviews: [{ type: mongoose.Types.ObjectId, required: true, ref: "Review" }],
+  likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
 });
 
 module.exports = mongoose.model("User", userSchema);
