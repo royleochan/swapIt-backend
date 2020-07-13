@@ -33,10 +33,19 @@ const getReviewsByUserId = async (req, res, next) => {
 
   reviewRating = reviewRating / userWithReviews.reviews.length;
 
+  const result = await Promise.all(
+    userWithReviews.reviews.map(async (review) => {
+      const creator = await User.findById(review.creator, {
+        name: 1,
+        profilePic: 1,
+      });
+      review.creator = creator;
+      return review.toObject({ getters: true });
+    })
+  );
+
   res.json({
-    reviews: userWithReviews.reviews.map((review) =>
-      review.toObject({ getters: true })
-    ),
+    reviews: result,
     reviewRating,
   });
 };
