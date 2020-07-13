@@ -352,7 +352,6 @@ const unlikeProduct = async (req, res, next) => {
 };
 
 const getLikedProducts = async (req, res, next) => {
-  console.log("hi");
   const userId = req.params.uid;
 
   let userWithLikes;
