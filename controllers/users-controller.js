@@ -312,6 +312,36 @@ const updateUser = async (req, res, next) => {
   res.status(200).json({ user: user.toObject({ getters: true }) });
 };
 
+const updatePushToken = async (req, res, next) => {
+  const { pushToken } = req.body;
+  const userId = req.params.uid;
+
+  let user;
+  try {
+    user = await User.findById(userId);
+    console.log(user);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a user.",
+      500
+    );
+    return next(error);
+  }
+
+  user.pushToken = pushToken;
+
+  try {
+    await user.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update a user.",
+      500
+    );
+    return next(error);
+  }
+  res.status(200).json({ user: user.toObject({ getters: true }) });
+};
+
 exports.getUsers = getUsers;
 exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
@@ -320,3 +350,4 @@ exports.signupValidation = checkUsernameAndEmail;
 exports.signup = signup;
 exports.login = login;
 exports.updateUser = updateUser;
+exports.updatePushToken = updatePushToken;

@@ -13,6 +13,10 @@ const userSchema = new Schema({
   products: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
   reviews: [{ type: mongoose.Types.ObjectId, required: true, ref: "Review" }],
   likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
+  notifications: [
+    { type: mongoose.Types.ObjectId, required: true, ref: "Notification" },
+  ],
+  pushToken: { type: String },
 });
 
 module.exports = mongoose.model("User", userSchema);

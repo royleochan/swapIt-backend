@@ -36,4 +36,6 @@ router.post("/login", usersController.login);
 
 router.patch("/:uid", usersController.updateUser);
 
+router.patch("/token/:uid", usersController.updatePushToken);
+
 module.exports = router;
