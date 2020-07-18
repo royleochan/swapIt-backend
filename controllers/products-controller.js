@@ -87,6 +87,33 @@ const getAllProducts = async (req, res, next) => {
   });
 };
 
+const getMatchedProducts = async (req, res, next) => {
+  const prodId = req.params.pid;
+
+  let matchedProducts;
+  try {
+    matchedProducts = await Product.findById(prodId).populate("matches");
+    console.log(matchedProducts)
+  } catch (err) {
+    console.log(err);
+    const error = new HttpError(
+      "Fetching matches failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+  if (!matchedProducts.matches || matchedProducts.matches.length === 0) {
+    const error = new HttpError("Could not find any matches", 404);
+    return next(error);
+  }
+
+  res.status(200).json({
+    data: matchedProducts.matches.map((product) =>
+      product.toObject({ getters: true })
+    ),
+  });
+};
+
 // search for products
 const searchForProducts = async (req, res, next) => {
   const query = req.params.query;
@@ -468,6 +495,7 @@ const getLikedProducts = async (req, res, next) => {
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.getAllProducts = getAllProducts;
+exports.getMatchedProducts = getMatchedProducts;
 exports.searchForProducts = searchForProducts;
 exports.createProduct = createProduct;
 exports.updateProduct = updateProduct;
