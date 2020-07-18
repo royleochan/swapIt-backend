@@ -10,6 +10,7 @@ const productsRoutes = require("./routes/products-routes");
 const usersRoutes = require("./routes/users-routes");
 const reviewsRoutes = require("./routes/reviews-routes");
 const chatRoutes = require("./routes/chat-routes");
+const notificationRoutes = require("./routes/notification-routes");
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use("/api/products", productsRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/reviews", reviewsRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use((req, res, next) => {
   const error = new HttpError("Could not find route", 404);
