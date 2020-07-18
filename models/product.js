@@ -10,6 +10,7 @@ const productSchema = new Schema({
   allowance: { type: Number, required: true },
   creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
   likes: [{ type: mongoose.Types.ObjectId, ref: "User" }],
+  matches: [{ type: mongoose.Types.ObjectId, ref: "Product" }],
 });
 
 module.exports = mongoose.model("Product", productSchema);

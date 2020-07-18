@@ -36,8 +36,10 @@ const getProductsByUserId = async (req, res, next) => {
 
   let userWithProducts;
   try {
-    userWithProducts = await User.findById(userId)
-      .populate({ path: 'products', populate: 'creator' })
+    userWithProducts = await User.findById(userId).populate({
+      path: "products",
+      populate: "creator",
+    });
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later",
@@ -80,6 +82,33 @@ const getAllProducts = async (req, res, next) => {
 
   res.status(200).json({
     products: availableProducts.map((product) =>
+      product.toObject({ getters: true })
+    ),
+  });
+};
+
+const getMatchedProducts = async (req, res, next) => {
+  const prodId = req.params.pid;
+
+  let matchedProducts;
+  try {
+    matchedProducts = await Product.findById(prodId).populate("matches");
+    console.log(matchedProducts)
+  } catch (err) {
+    console.log(err);
+    const error = new HttpError(
+      "Fetching matches failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+  if (!matchedProducts.matches || matchedProducts.matches.length === 0) {
+    const error = new HttpError("Could not find any matches", 404);
+    return next(error);
+  }
+
+  res.status(200).json({
+    data: matchedProducts.matches.map((product) =>
       product.toObject({ getters: true })
     ),
   });
@@ -283,6 +312,61 @@ const likeProduct = async (req, res, next) => {
     return next(error);
   }
 
+  let creator;
+  try {
+    creator = await User.findById(product.creator).populate("likes", {
+      price: 1,
+      allowance: 1,
+      creator: 1,
+      matches: 1,
+    });
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching user failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  if (!creator) {
+    const error = new HttpError("Could not find user for this user id", 404);
+    return next(error);
+  }
+
+  const matchedItems = creator.likes
+    .filter((item) => {
+      console.log(item.creator.toString() === user._id.toString());
+      return item.creator.toString() === user._id.toString();
+    })
+    .filter((item) => {
+      const prodMinPrice = product.price - product.allowance;
+      const prodMaxPrice = product.price + product.allowance;
+      const itemMinPrice = item.price - item.allowance;
+      const itemMaxPrice = item.price + item.allowance;
+      console.log(prodMinPrice <= itemMaxPrice || itemMinPrice <= prodMaxPrice);
+      return (
+        // (product.price >= itemMinPrice && product.price <= itemMaxPrice) ||
+        // (item.price >= prodMinPrice && item.price <= prodMaxPrice)
+        prodMinPrice <= itemMaxPrice || itemMinPrice <= prodMaxPrice
+      );
+    });
+
+  if (matchedItems) {
+    for (i = 0; i < matchedItems.length; i++) {
+      product.matches.push(matchedItems[i]._id);
+      matchedItems[i].matches.push(product._id);
+      try {
+        await matchedItems[i].save();
+      } catch (err) {
+        const error = new HttpError(
+          "Could not like item, please try again later",
+          500
+        );
+        return next(error);
+      }
+    }
+  }
+
   try {
     await product.save();
     await user.save();
@@ -305,7 +389,22 @@ const unlikeProduct = async (req, res, next) => {
   let product;
   try {
     product = await Product.findById(productId);
+    const matchedProducts = await Product.findById(productId).populate(
+      "matches",
+      {
+        creator: 1,
+      }
+    );
+    let unmatchedProducts;
+    unmatchedProducts = matchedProducts.matches.filter(
+      (item) => item.creator.toString() === userId.toString()
+    );
+    console.log(unmatchedProducts);
+    for (i = 0; i < unmatchedProducts.length; i++) {
+      product.matches.pull(unmatchedProducts[i]);
+    }
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not delete product.",
       500
@@ -324,6 +423,21 @@ const unlikeProduct = async (req, res, next) => {
   try {
     user = await User.findById(userId);
     user.likes.pull(product._id);
+    userProducts = await User.findById(userId).populate("products", {
+      matches: 1,
+    });
+    for (i = 0; i < userProducts.products.length; i++) {
+      userProducts.products[i].matches.pull(productId);
+      try {
+        await userProducts.products[i].save();
+      } catch (err) {
+        const error = new HttpError(
+          "Could not unlike item, please try again later",
+          500
+        );
+        return next(error);
+      }
+    }
   } catch (err) {
     const error = new HttpError(
       "Fetching user failed, please try again later",
@@ -381,6 +495,7 @@ const getLikedProducts = async (req, res, next) => {
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.getAllProducts = getAllProducts;
+exports.getMatchedProducts = getMatchedProducts;
 exports.searchForProducts = searchForProducts;
 exports.createProduct = createProduct;
 exports.updateProduct = updateProduct;
