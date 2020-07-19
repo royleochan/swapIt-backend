@@ -73,7 +73,9 @@ const getAllProducts = async (req, res, next) => {
   let availableProductsExcludingLikes;
   try {
     availableProducts = await Product.find({ creator: { $ne: userId } });
-    availableProductsExcludingLikes = availableProducts.filter(product => (product.likes.indexOf(userId)) === -1)
+    availableProductsExcludingLikes = availableProducts.filter(
+      (product) => product.likes.indexOf(userId) === -1
+    );
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later",
@@ -82,7 +84,10 @@ const getAllProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (!availableProductsExcludingLikes || availableProductsExcludingLikes.length === 0) {
+  if (
+    !availableProductsExcludingLikes ||
+    availableProductsExcludingLikes.length === 0
+  ) {
     const error = new HttpError("Could not find any products", 404);
     return next(error);
   }
@@ -156,7 +161,15 @@ const createProduct = async (req, res, next) => {
     throw new HttpError("Invalid inputs passed, please check your data", 422);
   }
 
-  const { title, imageUrl, description, price, allowance, creator, category } = req.body;
+  const {
+    title,
+    imageUrl,
+    description,
+    price,
+    allowance,
+    creator,
+    category,
+  } = req.body;
 
   const createdProduct = new Product({
     title,
@@ -412,8 +425,10 @@ const likeProduct = async (req, res, next) => {
     });
 
   // if there is a match
-  if (matchedItems) {
+  if (matchedItems.length !== 0) {
     for (i = 0; i < matchedItems.length; i++) {
+      product.matches.push(matchedItems[i]._id);
+      matchedItems[i].matches.push(product._id);
       // create 2-way notifications
       const notificationLiker = new Notification({
         title: "New Match",
@@ -435,8 +450,7 @@ const likeProduct = async (req, res, next) => {
         // create and save
         const sess = await mongoose.startSession();
         sess.startTransaction();
-        product.matches.push(matchedItems[i]._id);
-        matchedItems[i].matches.push(product._id);
+
         await notificationLiker.save({ session: sess });
         await notificationOther.save({ session: sess });
         creator.notifications.push(notificationLiker);
@@ -469,7 +483,7 @@ const likeProduct = async (req, res, next) => {
         for (let chunk of chunks) {
           try {
             let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-            console.log(ticketChunk);
+            // console.log(ticketChunk);
             tickets.push(...ticketChunk);
           } catch (error) {
             console.error(error);
@@ -482,10 +496,8 @@ const likeProduct = async (req, res, next) => {
     }
   } else {
     try {
-      product.matches.push(matchedItems[i]._id);
-      matchedItems[i].matches.push(product._id);
-      await product.save({ session: sess });
-      await user.save({ session: sess });
+      await product.save();
+      await user.save();
     } catch (err) {
       console.log(err);
       return next(error);
