@@ -479,6 +479,8 @@ const likeProduct = async (req, res, next) => {
     }
   } else {
     try {
+      product.matches.push(matchedItems[i]._id);
+      matchedItems[i].matches.push(product._id);
       await product.save({ session: sess });
       await user.save({ session: sess });
     } catch (err) {
