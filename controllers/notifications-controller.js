@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const HttpError = require("../models/http-error");
 const Notification = require("../models/notification");
 const User = require("../models/user");
-const notification = require("../models/notification");
+const Product = require("../models/product");
 
 const getNotificationsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
@@ -35,6 +35,13 @@ const getNotificationsByUserId = async (req, res, next) => {
         profilePic: 1,
       });
       notification.creator = creator;
+      if (notification.product !== undefined) {
+        const product = await Product.findById(notification.product, {
+          title: 1,
+          imageUrl: 1,
+        });
+        notification.product = product;
+      }
       return notification.toObject({ getters: true });
     })
   );
@@ -81,7 +88,7 @@ const createNotification = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    await createNotification.save({ session: sess });
+    await createdNotification.save({ session: sess });
     userNotified.notifications.push(createdReview);
     await userNotified.save({ session: sess });
     await sess.commitTransaction();
