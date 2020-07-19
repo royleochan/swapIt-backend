@@ -70,8 +70,10 @@ const getAllProducts = async (req, res, next) => {
   const userId = req.params.uid;
 
   let availableProducts;
+  let availableProductsExcludingLikes;
   try {
     availableProducts = await Product.find({ creator: { $ne: userId } });
+    availableProductsExcludingLikes = availableProducts.filter(product => (product.likes.indexOf(userId)) === -1)
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later",
@@ -80,13 +82,13 @@ const getAllProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (!availableProducts || availableProducts.length === 0) {
+  if (!availableProductsExcludingLikes || availableProductsExcludingLikes.length === 0) {
     const error = new HttpError("Could not find any products", 404);
     return next(error);
   }
 
   res.status(200).json({
-    products: availableProducts.map((product) =>
+    products: availableProductsExcludingLikes.map((product) =>
       product.toObject({ getters: true })
     ),
   });
@@ -154,7 +156,7 @@ const createProduct = async (req, res, next) => {
     throw new HttpError("Invalid inputs passed, please check your data", 422);
   }
 
-  const { title, imageUrl, description, price, allowance, creator } = req.body;
+  const { title, imageUrl, description, price, allowance, creator, category } = req.body;
 
   const createdProduct = new Product({
     title,
@@ -163,6 +165,7 @@ const createProduct = async (req, res, next) => {
     allowance,
     price,
     creator,
+    category,
     likes: [],
   });
 
