@@ -7,7 +7,6 @@ const User = require("../models/user");
 
 const userPipeline = require("../controllers/pipelines/user-search");
 const Product = require("../models/product");
-const Review = require("../models/review");
 
 const getUsers = async (req, res, next) => {
   let users;
