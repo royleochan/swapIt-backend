@@ -417,9 +417,14 @@ const likeProduct = async (req, res, next) => {
       const prodMaxPrice = product.price + product.allowance;
       const itemMinPrice = item.price - item.allowance;
       const itemMaxPrice = item.price + item.allowance;
+
       return (
         (product.price >= itemMinPrice && product.price <= itemMaxPrice) ||
-        (item.price >= prodMinPrice && item.price <= prodMaxPrice)
+        (item.price >= prodMinPrice && item.price <= prodMaxPrice) ||
+        prodMinPrice === itemMaxPrice ||
+        prodMaxPrice === itemMinPrice ||
+        itemMinPrice === prodMinPrice ||
+        itemMaxPrice === prodMaxPrice
       );
     });
 
