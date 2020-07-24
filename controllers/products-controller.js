@@ -219,7 +219,7 @@ const createProduct = async (req, res, next) => {
 
 // update product
 const updateProduct = async (req, res, next) => {
-  const { title, description, price, allowance, imageUrl } = req.body;
+  const { title, description, imageUrl } = req.body;
   const productId = req.params.pid;
 
   let product;
@@ -235,8 +235,8 @@ const updateProduct = async (req, res, next) => {
 
   product.title = title;
   product.description = description;
-  product.price = price;
-  product.allowance = allowance;
+  // product.price = price;
+  // product.allowance = allowance;
   product.imageUrl = imageUrl;
 
   try {
