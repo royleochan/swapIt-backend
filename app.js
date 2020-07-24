@@ -1,16 +1,21 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const { Expo } = require("expo-server-sdk");
 const socketio = require("socket.io");
 
 const HttpError = require("./models/http-error");
 const Chat = require("./models/chat");
+const User = require("./models/user");
 
 const productsRoutes = require("./routes/products-routes");
 const usersRoutes = require("./routes/users-routes");
 const reviewsRoutes = require("./routes/reviews-routes");
 const chatRoutes = require("./routes/chat-routes");
 const notificationRoutes = require("./routes/notification-routes");
+
+// Create a new Expo SDK client
+let expo = new Expo();
 
 const app = express();
 
@@ -52,11 +57,23 @@ mongoose
 // Chat Logic
 const io = socketio(server);
 
+// Chat sessions
+const sessionsMap = {};
+
 // Messages Socket
 const chatSocket = io.of("/chatsocket");
 chatSocket.on("connection", function (socket) {
+  // ask for user id
+  socket.emit("askForUserId");
+
+  // map user id to socket id
+  socket.on("userIdReceived", (userId) => {
+    sessionsMap[userId] = socket.id;
+  });
+
   // Get chats from mongo db database
   socket.on("getChats", (data) => {
+    console.log("getChats");
     const { userId } = data;
     const chat = Chat.find({
       $or: [{ receiver: userId }, { sender: userId }],
@@ -94,7 +111,7 @@ chatSocket.on("connection", function (socket) {
   });
 
   // Handle new messages
-  socket.on("newMessage", (data) => {
+  socket.on("newMessage", async (data) => {
     const { receiver, sender, messages } = data;
 
     const query = Chat.findOne({
@@ -114,7 +131,11 @@ chatSocket.on("connection", function (socket) {
           });
 
           chat.save().then(() => {
-            chatSocket.emit("output", data.messages);
+            if (sessionsMap[receiver] !== undefined) {
+              chatSocket
+                .to(sessionsMap[receiver]) // emit to specific socket id
+                .emit(`output-${receiver}`, data.messages);
+            }
           });
         } else {
           const updateChat = Chat.updateOne(
@@ -126,7 +147,11 @@ chatSocket.on("connection", function (socket) {
             },
             { $set: { messages: messages } },
             () => {
-              chatSocket.emit("output", data.messages);
+              if (sessionsMap[receiver] !== undefined) {
+                chatSocket
+                  .to(sessionsMap[receiver]) // emit to specific socket id
+                  .emit(`output-${sender}`, data.messages);
+              }
             }
           );
         }
@@ -134,5 +159,30 @@ chatSocket.on("connection", function (socket) {
       .catch((error) => {
         res.json(error);
       });
+
+    // send new message notification
+    let notifications = [];
+
+    const user = await User.findById(receiver, { pushToken: 1 });
+    const senderUser = await User.findById(sender, { name: 1 });
+
+    const notification = {
+      to: user.pushToken,
+      sound: "default",
+      title: "New Message",
+      body: `${senderUser.name} has sent you a message`,
+    };
+
+    notifications.push(notification);
+
+    let chunks = expo.chunkPushNotifications(notifications);
+    let tickets = [];
+    try {
+      let ticketChunk = await expo.sendPushNotificationsAsync(chunks[0]);
+      console.log(ticketChunk);
+      tickets.push(...ticketChunk);
+    } catch (err) {
+      console.log(err);
+    }
   });
 });
