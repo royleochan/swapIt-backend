@@ -43,7 +43,7 @@ const getProductsByUserId = async (req, res, next) => {
   try {
     userWithProducts = await User.findById(userId).populate({
       path: "products",
-      populate: "creator",
+      // populate: "creator",
     });
   } catch (err) {
     const error = new HttpError(
