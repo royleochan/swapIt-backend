@@ -70,10 +70,7 @@ const searchForUsers = async (req, res, next) => {
   try {
     aggCursor = await User.aggregate(userPipeline.namePipeline);
   } catch (err) {
-    const error = new HttpError(
-      "Fetching users failed, please try again later",
-      500
-    );
+    const error = new HttpError("No users found", 500);
     return next(error);
   }
 
