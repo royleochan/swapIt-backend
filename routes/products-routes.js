@@ -2,7 +2,7 @@ const express = require("express");
 const { check } = require("express-validator");
 
 const productsControllers = require("../controllers/products-controller");
-const checkAuth = require("../middleware/check-auth");
+// const checkAuth = require("../middleware/check-auth");
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.get("/likedProducts/:uid", productsControllers.getLikedProducts);
 
 router.get("/matchedProducts/:pid", productsControllers.getMatchedProducts);
 
-router.use(checkAuth);
+// router.use(checkAuth);
 
 router.post(
   "/",

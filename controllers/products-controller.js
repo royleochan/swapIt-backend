@@ -1,18 +1,11 @@
-const { v4: uuid } = require("uuid");
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
-const { Expo } = require("expo-server-sdk");
 
 const HttpError = require("../models/http-error");
 const Product = require("../models/product");
 const User = require("../models/user");
-const Notification = require("../models/notification");
 const productPipeline = require("../controllers/pipelines/products-search");
 
-// Create a new Expo SDK client
-let expo = new Expo();
-
-// read product by product id
 const getProductById = async (req, res, next) => {
   const productId = req.params.pid;
 
@@ -35,7 +28,6 @@ const getProductById = async (req, res, next) => {
   res.json({ product: product.toObject({ getters: true }) });
 };
 
-// read products/product by user id
 const getProductsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
@@ -43,7 +35,6 @@ const getProductsByUserId = async (req, res, next) => {
   try {
     userWithProducts = await User.findById(userId).populate({
       path: "products",
-      // populate: "creator",
     });
   } catch (err) {
     const error = new HttpError(
@@ -65,7 +56,6 @@ const getProductsByUserId = async (req, res, next) => {
   });
 };
 
-// read products/product by user id
 const getAllProducts = async (req, res, next) => {
   const userId = req.params.uid;
 
@@ -165,8 +155,8 @@ const createProduct = async (req, res, next) => {
     title,
     imageUrl,
     description,
-    price,
-    allowance,
+    minPrice,
+    maxPrice,
     creator,
     category,
   } = req.body;
@@ -175,8 +165,8 @@ const createProduct = async (req, res, next) => {
     title,
     imageUrl,
     description,
-    allowance,
-    price,
+    minPrice,
+    maxPrice,
     creator,
     category,
     likes: [],
@@ -219,7 +209,7 @@ const createProduct = async (req, res, next) => {
 
 // update product
 const updateProduct = async (req, res, next) => {
-  const { title, description, imageUrl } = req.body;
+  const { title, description, imageUrl, } = req.body;
   const productId = req.params.pid;
 
   let product;
@@ -235,8 +225,6 @@ const updateProduct = async (req, res, next) => {
 
   product.title = title;
   product.description = description;
-  // product.price = price;
-  // product.allowance = allowance;
   product.imageUrl = imageUrl;
 
   try {
@@ -332,20 +320,6 @@ const likeProduct = async (req, res, next) => {
     return next(error);
   }
 
-  let notificationTitle = "New Like";
-  let notificationBody = `${user.name} has liked your ${product.title}`;
-
-  // create like notification
-  let createdNotification = new Notification({
-    title: notificationTitle,
-    body: notificationBody,
-    creator: user.id,
-    notified: product.creator,
-    product: product,
-  });
-
-  console.log(createdNotification);
-
   let creator;
   try {
     creator = await User.findById(product.creator).populate("likes", {
@@ -366,45 +340,6 @@ const likeProduct = async (req, res, next) => {
   if (!creator) {
     const error = new HttpError("Could not find user for this user id", 404);
     return next(error);
-  }
-
-  // Save the like notification
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-    await createdNotification.save({ session: sess });
-    creator.notifications.push(createdNotification);
-    await creator.save({ session: sess });
-    await sess.commitTransaction();
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Failed to send like notification, please try again.",
-      500
-    );
-    return next(error);
-  }
-
-  // Send the like notification
-  let notifications = [];
-
-  const notification = {
-    to: creator.pushToken,
-    sound: "default",
-    title: notificationTitle,
-    body: notificationBody,
-  };
-
-  notifications.push(notification);
-
-  let chunks = expo.chunkPushNotifications(notifications);
-  let tickets = [];
-  try {
-    let ticketChunk = await expo.sendPushNotificationsAsync(chunks[0]);
-    console.log(ticketChunk);
-    tickets.push(...ticketChunk);
-  } catch (err) {
-    console.log(err);
   }
 
   // check for matches
@@ -433,66 +368,16 @@ const likeProduct = async (req, res, next) => {
     for (i = 0; i < matchedItems.length; i++) {
       product.matches.push(matchedItems[i]._id);
       matchedItems[i].matches.push(product._id);
-      // create 2-way notifications
-      const notificationLiker = new Notification({
-        title: "New Match",
-        body: `${user.name} has a match with your ${product.title}`,
-        creator: user.id,
-        notified: product.creator,
-        product: product,
-      });
-
-      const notificationOther = new Notification({
-        title: "New Match",
-        body: `${creator.name} has a match with your ${matchedItems[i].title}`,
-        creator: product.creator,
-        notified: user._id,
-        product: matchedItems[i],
-      });
-
       try {
         // create and save
         const sess = await mongoose.startSession();
         sess.startTransaction();
 
-        await notificationLiker.save({ session: sess });
-        await notificationOther.save({ session: sess });
-        creator.notifications.push(notificationLiker);
-        user.notifications.push(notificationOther);
         await matchedItems[i].save({ session: sess });
         await product.save({ session: sess });
         await user.save({ session: sess });
         await creator.save({ session: sess });
         await sess.commitTransaction();
-        // dispatch notifications
-        let notifications = [];
-        const notificationOne = {
-          to: creator.pushToken,
-          sound: "default",
-          title: "New Match",
-          body: `${user.name} has a match with your ${product.title}`,
-        };
-
-        const notificationTwo = {
-          to: user.pushToken,
-          sound: "default",
-          title: "New Match",
-          body: `${creator.name} has a match with your ${matchedItems[i].title}`,
-        };
-
-        notifications.push(notificationOne);
-        notifications.push(notificationTwo);
-        let chunks = expo.chunkPushNotifications(notifications);
-        let tickets = [];
-        for (let chunk of chunks) {
-          try {
-            let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-            // console.log(ticketChunk);
-            tickets.push(...ticketChunk);
-          } catch (error) {
-            console.error(error);
-          }
-        }
       } catch (err) {
         console.log(err);
         return next(error);
@@ -609,7 +494,7 @@ const getLikedProducts = async (req, res, next) => {
   }
 
   if (!userWithLikes || userWithLikes.likes.length === 0) {
-    const error = new HttpError("Could not find likes for user id", 404);
+    const error = new HttpError("Could not find liked products for user id", 404);
     return next(error);
   }
 

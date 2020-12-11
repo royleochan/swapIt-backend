@@ -5,7 +5,6 @@ const mongoose = require("mongoose");
 const HttpError = require("../models/http-error");
 const Review = require("../models/review");
 const User = require("../models/user");
-const Notification = require("../models/notification");
 
 // Create a new Expo SDK client
 let expo = new Expo();
@@ -87,23 +86,11 @@ const createReview = async (req, res, next) => {
     return next(error);
   }
 
-  const notificationTitle = "New Review";
-  const notificationBody = `${creatorName} gave you a review!`;
-
-  const createdNotification = new Notification({
-    title: notificationTitle,
-    body: notificationBody,
-    creator,
-    notified: reviewed,
-  });
-
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
     await createdReview.save({ session: sess });
     userReviewed.reviews.push(createdReview);
-    await createdNotification.save({ sess: sess });
-    userReviewed.notifications.push(createdNotification);
     await userReviewed.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
@@ -113,27 +100,6 @@ const createReview = async (req, res, next) => {
       500
     );
     return next(error);
-  }
-
-  let notifications = [];
-
-  const notification = {
-    to: userReviewed.pushToken,
-    sound: "default",
-    title: notificationTitle,
-    body: notificationBody,
-  };
-
-  notifications.push(notification);
-
-  let chunks = expo.chunkPushNotifications(notifications);
-  let tickets = [];
-  try {
-    let ticketChunk = await expo.sendPushNotificationsAsync(chunks[0]);
-    console.log(ticketChunk);
-    tickets.push(...ticketChunk);
-  } catch (err) {
-    console.log(err);
   }
 
   res.status(201).json({

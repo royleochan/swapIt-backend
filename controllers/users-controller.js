@@ -8,23 +8,6 @@ const User = require("../models/user");
 const userPipeline = require("../controllers/pipelines/user-search");
 const Product = require("../models/product");
 
-const getUsers = async (req, res, next) => {
-  let users;
-  try {
-    users = await User.find(
-      {},
-      "username email name description location products"
-    );
-  } catch (err) {
-    const error = new HttpError(
-      "Fetching users failed, please try again later",
-      500
-    );
-    return next(error);
-  }
-  res.json({ users: users.map((user) => user.toObject({ getters: true })) });
-};
-
 const getLikedUsers = async (req, res, next) => {
   const prodId = req.params.pid;
   let users;
@@ -79,66 +62,14 @@ const searchForUsers = async (req, res, next) => {
     searchedUsers.push(user);
   });
 
-  // atlas autocomplete search on username field
-  // userPipeline.usernamePipeline[0].$search.autocomplete.query = query;
-  // try {
-  //   aggCursor = await User.aggregate(userPipeline.usernamePipeline);
-  // } catch (err) {
-  //   const error = new HttpError(
-  //     "Fetching users failed, please try again later",
-  //     500
-  //   );
-  //   return next(error);
-  // }
-  // aggCursor.forEach((user) => {
-  //   searchedUsers.push(user);
-  // });
-
   if (searchedUsers.length === 0) {
     const error = new HttpError("Could not find any users", 404);
     return next(error);
   }
 
-  console.log(searchedUsers);
-
   res.status(200).json({
     users: searchedUsers,
   });
-};
-
-const checkUsernameAndEmail = async (req, res, next) => {
-  const { username, email } = req.body;
-
-  let existingEmail;
-  let existingUsername;
-  try {
-    existingEmail = await User.findOne({ email: email });
-    existingUsername = await User.findOne({ username: username });
-  } catch (err) {
-    const error = new HttpError(
-      "Signing up failed, please try again later.",
-      500
-    );
-    return next(error);
-  }
-
-  if (existingEmail) {
-    const error = new HttpError(
-      "Account with email already exists, try logging in.",
-      422
-    );
-    return next(error);
-  }
-
-  if (existingUsername) {
-    const error = new HttpError(
-      "Account with username already exists, use another username.",
-      422
-    );
-    return next(error);
-  }
-
-  res.status(200).json({ message: "Passed username and email check" });
 };
 
 const signup = async (req, res, next) => {
@@ -208,13 +139,13 @@ const signup = async (req, res, next) => {
     return next(error);
   }
 
-  let token;
-  try {
-    token = jwt.sign({ user: createdUser }, `${process.env.SECRET_KEY}`);
-  } catch (err) {
-    const error = new HttpError("Signing up failed, please try again", 500);
-    return next(error);
-  }
+  let token = "";
+  // try {
+  //   token = jwt.sign({ user: createdUser }, `${process.env.SECRET_KEY}`);
+  // } catch (err) {
+  //   const error = new HttpError("Signing up failed, please try again", 500);
+  //   return next(error);
+  // }
 
   res
     .status(201)
@@ -257,16 +188,16 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  let token;
-  try {
-    token = jwt.sign({ user: existingUser }, `${process.env.SECRET_KEY}`);
-  } catch (err) {
-    const error = new HttpError(
-      "Logging in failed, please try again later.",
-      500
-    );
-    return next(error);
-  }
+  let token = "";
+  // try {
+  //   token = jwt.sign({ user: existingUser }, `${process.env.SECRET_KEY}`);
+  // } catch (err) {
+  //   const error = new HttpError(
+  //     "Logging in failed, please try again later.",
+  //     500
+  //   );
+  //   return next(error);
+  // }
 
   res.status(200).json({
     user: existingUser.toObject({ getters: true }),
@@ -308,42 +239,9 @@ const updateUser = async (req, res, next) => {
   res.status(200).json({ user: user.toObject({ getters: true }) });
 };
 
-const updatePushToken = async (req, res, next) => {
-  const { pushToken } = req.body;
-  const userId = req.params.uid;
-
-  let user;
-  try {
-    user = await User.findById(userId);
-    console.log(user);
-  } catch (err) {
-    const error = new HttpError(
-      "Something went wrong, could not find a user.",
-      500
-    );
-    return next(error);
-  }
-
-  user.pushToken = pushToken;
-
-  try {
-    await user.save();
-  } catch (err) {
-    const error = new HttpError(
-      "Something went wrong, could not update a user.",
-      500
-    );
-    return next(error);
-  }
-  res.status(200).json({ user: user.toObject({ getters: true }) });
-};
-
-exports.getUsers = getUsers;
 exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
 exports.searchForUsers = searchForUsers;
-exports.signupValidation = checkUsernameAndEmail;
 exports.signup = signup;
 exports.login = login;
 exports.updateUser = updateUser;
-exports.updatePushToken = updatePushToken;

@@ -5,37 +5,26 @@ const usersController = require("../controllers/users-controller");
 
 const router = express.Router();
 
-router.get("/", usersController.getUsers);
-
+// get routes
 router.get("/product/:pid", usersController.getLikedUsers);
-
 router.get("/:uid", usersController.getUserById);
-
 router.get("/search/:query", usersController.searchForUsers);
 
-router.post(
-  "/check",
-  [
-    check("email").normalizeEmail().isEmail(),
-    check("username").isLength({ max: 15 }),
-  ],
-  usersController.signupValidation
-);
-
+// post routes
 router.post(
   "/signup",
   [
     check("name").not().isEmpty(),
     check("email").normalizeEmail().isEmail(),
     check("password").isLength({ min: 6 }),
+    check("username").isLength({ max: 15 }),
   ],
   usersController.signup
 );
 
 router.post("/login", usersController.login);
 
+// patch routes
 router.patch("/:uid", usersController.updateUser);
-
-router.patch("/token/:uid", usersController.updatePushToken);
 
 module.exports = router;
