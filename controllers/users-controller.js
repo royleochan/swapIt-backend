@@ -139,13 +139,13 @@ const signup = async (req, res, next) => {
     return next(error);
   }
 
-  let token = "";
-  // try {
-  //   token = jwt.sign({ user: createdUser }, `${process.env.SECRET_KEY}`);
-  // } catch (err) {
-  //   const error = new HttpError("Signing up failed, please try again", 500);
-  //   return next(error);
-  // }
+  // Generate jwt token
+  try {
+    token = jwt.sign({ user: createdUser }, `${process.env.SECRET_KEY}`);
+  } catch (err) {
+    const error = new HttpError("Signing up failed, please try again", 500);
+    return next(error);
+  }
 
   res
     .status(201)
@@ -188,16 +188,16 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  let token = "";
-  // try {
-  //   token = jwt.sign({ user: existingUser }, `${process.env.SECRET_KEY}`);
-  // } catch (err) {
-  //   const error = new HttpError(
-  //     "Logging in failed, please try again later.",
-  //     500
-  //   );
-  //   return next(error);
-  // }
+  // Generate jwt token
+  try {
+    token = jwt.sign({ user: existingUser }, `${process.env.SECRET_KEY}`);
+  } catch (err) {
+    const error = new HttpError(
+      "Logging in failed, please try again later.",
+      500
+    );
+    return next(error);
+  }
 
   res.status(200).json({
     user: existingUser.toObject({ getters: true }),
