@@ -130,6 +130,9 @@ const signup = async (req, res, next) => {
     location,
     password: hashedPassword,
     products: [],
+    likes: [],
+    followers: [],
+    following: [],
   });
 
   try {
@@ -239,9 +242,77 @@ const updateUser = async (req, res, next) => {
   res.status(200).json({ user: user.toObject({ getters: true }) });
 };
 
+const followUser = async (req, res, next) => {
+  const { loggedInUserId } = req.body;
+  const targetUserId = req.params.uid;
+
+  let loggedInUser;
+  let targetUser;
+  try {
+    loggedInUser = await User.findById(loggedInUserId);
+    targetUser = await User.findById(targetUserId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find users.",
+      500
+    );
+    return next(error);
+  }
+
+  try {
+    loggedInUser.following.push(targetUserId);
+    targetUser.followers.push(loggedInUserId);
+    await loggedInUser.save();
+    await targetUser.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not follow user.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
+};
+
+const unfollowUser = async (req, res, next) => {
+  const { loggedInUserId } = req.body;
+  const targetUserId = req.params.uid;
+
+  let loggedInUser;
+  let targetUser;
+  try {
+    loggedInUser = await User.findById(loggedInUserId);
+    targetUser = await User.findById(targetUserId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find users.",
+      500
+    );
+    return next(error);
+  }
+
+  try {
+    loggedInUser.following.pull(targetUserId);
+    targetUser.followers.pull(loggedInUserId);
+    await loggedInUser.save();
+    await targetUser.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not follow user.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
+};
+
 exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
 exports.searchForUsers = searchForUsers;
 exports.signup = signup;
 exports.login = login;
 exports.updateUser = updateUser;
+exports.followUser = followUser;
+exports.unfollowUser = unfollowUser;

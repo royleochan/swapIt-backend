@@ -2,6 +2,7 @@ const express = require("express");
 const { check } = require("express-validator");
 
 const usersController = require("../controllers/users-controller");
+const checkAuth = require("../middleware/check-auth");
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ router.post(
   [
     check("name").not().isEmpty(),
     check("email").normalizeEmail().isEmail(),
-    check("password").isLength({ min: 6 }),
+    check("password").isLength({ min: 8 }),
     check("username").isLength({ max: 15 }),
   ],
   usersController.signup
@@ -25,6 +26,10 @@ router.post(
 router.post("/login", usersController.login);
 
 // patch routes
+router.patch("/follow/:uid", usersController.followUser);
+router.patch("/unfollow/:uid", usersController.unfollowUser);
+
+router.use(checkAuth);
 router.patch("/:uid", usersController.updateUser);
 
 module.exports = router;
