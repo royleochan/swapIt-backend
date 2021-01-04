@@ -209,7 +209,7 @@ const createProduct = async (req, res, next) => {
 
 // update product
 const updateProduct = async (req, res, next) => {
-  const { title, description, imageUrl, } = req.body;
+  const { title, description, imageUrl, category } = req.body;
   const productId = req.params.pid;
 
   let product;
@@ -226,6 +226,7 @@ const updateProduct = async (req, res, next) => {
   product.title = title;
   product.description = description;
   product.imageUrl = imageUrl;
+  product.category = category;
 
   try {
     await product.save();
@@ -494,7 +495,10 @@ const getLikedProducts = async (req, res, next) => {
   }
 
   if (!userWithLikes || userWithLikes.likes.length === 0) {
-    const error = new HttpError("Could not find liked products for user id", 404);
+    const error = new HttpError(
+      "Could not find liked products for user id",
+      404
+    );
     return next(error);
   }
 
