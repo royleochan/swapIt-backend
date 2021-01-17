@@ -62,7 +62,7 @@ const getAllProducts = async (req, res, next) => {
   let availableProducts;
   let availableProductsExcludingLikes;
   try {
-    availableProducts = await Product.find({ creator: { $ne: userId } });
+    availableProducts = await Product.find({ creator: { $ne: userId } }).populate('creator');
     availableProductsExcludingLikes = availableProducts.filter(
       (product) => product.likes.indexOf(userId) === -1
     );
