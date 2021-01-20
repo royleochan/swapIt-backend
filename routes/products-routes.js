@@ -16,6 +16,8 @@ router.get("/user/all/:uid", productsControllers.getAllProducts);
 
 router.get("/likedProducts/:uid", productsControllers.getLikedProducts);
 
+router.get("/category/:filterCategory", productsControllers.getCategoryProducts);
+
 router.get("/matchedProducts/:pid", productsControllers.getMatchedProducts);
 
 // router.use(checkAuth);

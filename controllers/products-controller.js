@@ -89,6 +89,25 @@ const getAllProducts = async (req, res, next) => {
   });
 };
 
+const getCategoryProducts = async (req, res, next) => {
+  const filterCategory = req.params.filterCategory
+
+  let productsByCategory;
+  try {
+    productsByCategory = await Product.find({category: filterCategory}).populate('creator');
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching products failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({
+    products: productsByCategory
+  });
+}
+
 const getMatchedProducts = async (req, res, next) => {
   const prodId = req.params.pid;
 
@@ -115,7 +134,6 @@ const getMatchedProducts = async (req, res, next) => {
   });
 };
 
-// search for products
 const searchForProducts = async (req, res, next) => {
   const query = req.params.query;
   productPipeline[0].$search.text.query = query;
@@ -144,7 +162,6 @@ const searchForProducts = async (req, res, next) => {
   });
 };
 
-// create product
 const createProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -207,7 +224,6 @@ const createProduct = async (req, res, next) => {
   res.status(201).json({ product: createdProduct.toObject({ getters: true }) });
 };
 
-// update product
 const updateProduct = async (req, res, next) => {
   const { title, description, imageUrl, category } = req.body;
   const productId = req.params.pid;
@@ -241,7 +257,6 @@ const updateProduct = async (req, res, next) => {
   res.status(200).json({ product: product.toObject({ getters: true }) });
 };
 
-// delete product
 const deleteProduct = async (req, res, next) => {
   const productId = req.params.pid;
 
@@ -279,7 +294,6 @@ const deleteProduct = async (req, res, next) => {
   res.status(200).json({ message: "Deleted Product" });
 };
 
-// like product
 const likeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
@@ -397,7 +411,6 @@ const likeProduct = async (req, res, next) => {
   res.status(200).json({ message: "Liked Product", user });
 };
 
-// unlike product
 const unlikeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
@@ -512,6 +525,7 @@ const getLikedProducts = async (req, res, next) => {
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.getAllProducts = getAllProducts;
+exports.getCategoryProducts = getCategoryProducts;
 exports.getMatchedProducts = getMatchedProducts;
 exports.searchForProducts = searchForProducts;
 exports.createProduct = createProduct;
