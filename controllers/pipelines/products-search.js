@@ -2,7 +2,7 @@ module.exports = productPipeline = [
   {
     $search: {
       text: {
-        path: ["description", "title"],
+        path: ["title"],
         query: "shirt",
         fuzzy: {
           maxEdits: 1,
@@ -10,6 +10,15 @@ module.exports = productPipeline = [
         },
       },
     },
+  },
+  {
+    $lookup:
+      {
+        from: "users",
+        localField: "creator",
+        foreignField: "_id",
+        as: "creator",
+      }
   }
 ];
 
