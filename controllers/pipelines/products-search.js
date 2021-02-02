@@ -12,13 +12,17 @@ module.exports = productPipeline = [
     },
   },
   {
-    $lookup:
-      {
-        from: "users",
-        localField: "creator",
-        foreignField: "_id",
-        as: "creator",
-      }
-  }
+    $lookup: {
+      from: "users",
+      localField: "creator",
+      foreignField: "_id",
+      as: "creator",
+    },
+  },
+  {
+    $unwind: {
+      path: "$creator",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
 ];
-
