@@ -6,9 +6,6 @@ const Product = require("../models/product");
 const User = require("../models/user");
 const productPipeline = require("../controllers/pipelines/products-search");
 
-//Testing
-const helloWorld = () => {}
-
 const getProductById = async (req, res, next) => {
   const productId = req.params.pid;
 
