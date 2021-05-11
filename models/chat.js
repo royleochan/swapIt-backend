@@ -7,4 +7,4 @@ const chatRoomSchema = new Schema({
     messages: [{ type: mongoose.Types.ObjectId, required: true, ref: "Message" }],
 });
 
-module.exports = mongoose.model("ChatRoom", chatRoomSchema);
+module.exports = mongoose.model("Chat", chatRoomSchema);
