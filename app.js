@@ -1,5 +1,4 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
 const HttpError = require("./models/http-error");
@@ -18,8 +17,8 @@ const server = app.listen(port, () => {
 const io = require("socket.io")(server);
 require('./chatSocket.js')(io);
 
-app.use(bodyParser.json());
 
+app.use(express.json());
 app.use("/api/products", productsRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/reviews", reviewsRoutes);

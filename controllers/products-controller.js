@@ -7,33 +7,23 @@ const User = require("../models/user");
 const productPipeline = require("../controllers/pipelines/products-search");
 
 const getProductById = async (req, res, next) => {
-  const productId = req.params.pid;
+  const { productId } = req.params;
 
-  let product;
   try {
-    product = await Product.findById(productId);
+    const product = await Product.findById(productId);
+    res.json({ product: product.toObject({ getters: true }) });
   } catch (err) {
-    const error = new HttpError(
-      "Something went wrong, could not find a product.",
-      500
-    );
-    return next(error);
-  }
-
-  if (!product) {
     const error = new HttpError("Could not find product for product id", 404);
     return next(error);
   }
-
-  res.json({ product: product.toObject({ getters: true }) });
 };
 
 const getProductsByUserId = async (req, res, next) => {
-  const userId = req.params.uid;
+  const { uid } = req.params;
 
   let userWithProducts;
   try {
-    userWithProducts = await User.findById(userId).populate({
+    userWithProducts = await User.findById(uid).populate({
       path: "products",
     });
   } catch (err) {
@@ -57,12 +47,14 @@ const getProductsByUserId = async (req, res, next) => {
 };
 
 const getAllProducts = async (req, res, next) => {
-  const userId = req.params.uid;
+  const { uid } = req.params;
 
   let availableProducts;
   let availableProductsExcludingLikes;
   try {
-    availableProducts = await Product.find({ creator: { $ne: userId } }).populate('creator');
+    availableProducts = await Product.find({
+      creator: { $ne: uid },
+    }).populate("creator");
     availableProductsExcludingLikes = availableProducts.filter(
       (product) => product.likes.indexOf(userId) === -1
     );
@@ -90,11 +82,13 @@ const getAllProducts = async (req, res, next) => {
 };
 
 const getCategoryProducts = async (req, res, next) => {
-  const filterCategory = req.params.filterCategory
+  const { filterCategory } = req.params;
 
   let productsByCategory;
   try {
-    productsByCategory = await Product.find({category: filterCategory}).populate('creator');
+    productsByCategory = await Product.find({
+      category: filterCategory,
+    }).populate("creator");
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later",
@@ -103,10 +97,18 @@ const getCategoryProducts = async (req, res, next) => {
     return next(error);
   }
 
+  if (
+    !productsByCategory ||
+    productsByCategory.length === 0
+  ) {
+    const error = new HttpError("Could not find any products", 404);
+    return next(error);
+  }
+
   res.status(200).json({
-    products: productsByCategory
+    products: productsByCategory,
   });
-}
+};
 
 const getMatchedProducts = async (req, res, next) => {
   const prodId = req.params.pid;

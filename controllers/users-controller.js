@@ -4,72 +4,60 @@ const jwt = require("jsonwebtoken");
 
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
-
-const userPipeline = require("../controllers/pipelines/user-search");
 const Product = require("../models/product");
+const userPipeline = require("../controllers/pipelines/user-search");
 
 const getLikedUsers = async (req, res, next) => {
-  const prodId = req.params.pid;
-  let users;
+  const { pid } = req.params;
+
   try {
-    users = await Product.findById(prodId, "likes");
+    const users = await Product.findById(pid, "likes");
+    res.json({ users });
   } catch (err) {
     const error = new HttpError(
-      "Fetching users failed, please try again later",
-      500
+      "Could not find users who like the product",
+      404
     );
     return next(error);
   }
-  res.json({ users });
 };
 
 const getUserById = async (req, res, next) => {
-  const userId = req.params.uid;
-  let user;
-  try {
-    user = await User.findById(userId);
-  } catch (err) {
-    const error = new HttpError(
-      "Fetching user failed, please try again later",
-      500
-    );
-    return next(error);
-  }
+  const { uid } = req.params;
 
-  if (!user) {
+  try {
+    const user = await User.findById(uid);
+    res.json({ user: user.toObject({ getters: true }) });
+  } catch (err) {
     const error = new HttpError("Could not find user for this user id", 404);
     return next(error);
   }
-
-  res.json({ user: user.toObject({ getters: true }) });
 };
 
 const searchForUsers = async (req, res, next) => {
-  const query = req.params.query;
-  userPipeline.namePipeline[0].$search.autocomplete.query = query;
+  const { query } = req.params;
+  userPipeline.usernamePipeline[0].$search.autocomplete.query = query;
 
-  // atlas autocomplete search on name field
-  let aggCursor;
+  // atlas autocomplete search on username field
   try {
-    aggCursor = await User.aggregate(userPipeline.namePipeline);
+    const aggCursor = await User.aggregate(userPipeline.namePipeline);
+    const searchedUsers = [];
+    aggCursor.forEach((user) => {
+      searchedUsers.push(user);
+    });
+
+    if (searchedUsers.length === 0) {
+      const error = new HttpError("Could not find any users", 404);
+      return next(error);
+    }
+
+    res.status(200).json({
+      users: searchedUsers,
+    });
   } catch (err) {
     const error = new HttpError("No users found", 500);
     return next(error);
   }
-
-  const searchedUsers = [];
-  aggCursor.forEach((user) => {
-    searchedUsers.push(user);
-  });
-
-  if (searchedUsers.length === 0) {
-    const error = new HttpError("Could not find any users", 404);
-    return next(error);
-  }
-
-  res.status(200).json({
-    users: searchedUsers,
-  });
 };
 
 const signup = async (req, res, next) => {
@@ -79,6 +67,7 @@ const signup = async (req, res, next) => {
       new HttpError("Invalid inputs passed, please check your data", 422)
     );
   }
+
   const {
     name,
     email,
@@ -115,7 +104,7 @@ const signup = async (req, res, next) => {
     hashedPassword = await bcrypt.hash(password, 12);
   } catch (err) {
     const error = new HttpError(
-      "Could not create user, please try again.",
+      "Could not create password, please try again.",
       500
     );
     return next(error);
@@ -260,10 +249,12 @@ const followUser = async (req, res, next) => {
   }
 
   try {
+    sess.startTransaction();
     loggedInUser.following.push(targetUserId);
     targetUser.followers.push(loggedInUserId);
     await loggedInUser.save();
     await targetUser.save();
+    await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not follow user.",
@@ -293,10 +284,12 @@ const unfollowUser = async (req, res, next) => {
   }
 
   try {
+    sess.startTransaction();
     loggedInUser.following.pull(targetUserId);
     targetUser.followers.pull(loggedInUserId);
     await loggedInUser.save();
     await targetUser.save();
+    await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not follow user.",
