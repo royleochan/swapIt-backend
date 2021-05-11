@@ -22,13 +22,11 @@ router.post(
   ],
   usersController.signup
 );
-
 router.post("/login", usersController.login);
 
 // patch routes
 router.patch("/follow/:uid", usersController.followUser);
 router.patch("/unfollow/:uid", usersController.unfollowUser);
-
 router.use(checkAuth);
 router.patch("/:uid", usersController.updateUser);
 
