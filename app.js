@@ -1,5 +1,4 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
 const HttpError = require("./models/http-error");
@@ -9,9 +8,9 @@ const usersRoutes = require("./routes/users-routes");
 const reviewsRoutes = require("./routes/reviews-routes");
 
 const app = express();
+const port = process.env.PORT || 5000;
 
-app.use(bodyParser.json());
-
+app.use(express.json());
 app.use("/api/products", productsRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/reviews", reviewsRoutes);
@@ -29,7 +28,10 @@ app.use((error, req, res, next) => {
   res.json({ message: error.message || "An unknown error occurred!" });
 });
 
-const server = app.listen(process.env.PORT || 5000);
+app.listen(port, () => {
+  console.log(`Server is running on port: ${port}`);
+});
+
 mongoose
   .connect(
     `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.dmnbw.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
