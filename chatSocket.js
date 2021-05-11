@@ -35,11 +35,11 @@ const chatSocket = (io) => {
                 creator: userId,
                 content: message,
                 imageUrl: imageUrl,
-            })
+            });
             chat.messages.push(msg);
             await msg.save();
             await chat.save();
-            io.to(socket.activeRoom).emit("message", message);
+            io.to(socket.activeRoom).emit("message", msg);
         });
     });
 };

@@ -11,7 +11,10 @@ const chatsRoutes = require("./routes/chats-routes");
 
 
 const app = express();
-const server = app.listen(process.env.PORT || 5000);
+const port = process.env.PORT || 5000;
+const server = app.listen(port, () => {
+    console.log("Server listening on port: %s", port);
+});
 const io = require("socket.io")(server);
 require('./chatSocket.js')(io);
 
@@ -37,7 +40,7 @@ app.use((error, req, res, next) => {
 
 mongoose
   .connect(
-    `mongodb+srv://kye:7gE6Wxpcf6GA9bJi@cluster0.dmnbw.mongodb.net/swapItDB?retryWrites=true&w=majority`,
+    `mongodb+srv://${ process.env.DB_USER }:${ process.env.DB_PASSWORD }@cluster0.dmnbw.mongodb.net/${ process.env.DB_NAME }?retryWrites=true&w=majority`,
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
