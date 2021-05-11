@@ -15,6 +15,7 @@ const userSchema = new Schema({
   likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
   followers: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
   following: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
+  chats: [{ type: mongoose.Types.ObjectId, required: true, ref: "Chat" }],
 });
 
 module.exports = mongoose.model("User", userSchema);
