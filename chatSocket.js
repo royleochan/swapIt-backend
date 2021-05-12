@@ -17,8 +17,7 @@ const createChatRoom = async (userId1, userId2) => {
     }
 };
 
-const chatSocket = io.of("/chatSocket");
-chatSocket = (io) => {
+const chatSocket = (io) => {
     io.on("connection", (socket) => {
         socket.on("join", async (roomId) => {
             try {
