@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const socketio = require("socket.io");
 
 const HttpError = require("./models/http-error");
 
@@ -14,9 +15,8 @@ const port = process.env.PORT || 5000;
 const server = app.listen(port, () => {
     console.log("Server listening on port: %s", port);
 });
-const io = require("socket.io")(server);
+const io = socketio(server);
 require('./chatSocket.js')(io);
-
 
 app.use(express.json());
 app.use("/api/products", productsRoutes);
