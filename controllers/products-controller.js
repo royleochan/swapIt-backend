@@ -56,7 +56,7 @@ const getAllProducts = async (req, res, next) => {
       creator: { $ne: uid },
     }).populate("creator");
     availableProductsExcludingLikes = availableProducts.filter(
-      (product) => product.likes.indexOf(userId) === -1
+      (product) => product.likes.indexOf(uid) === -1
     );
   } catch (err) {
     const error = new HttpError(
@@ -97,10 +97,7 @@ const getCategoryProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (
-    !productsByCategory ||
-    productsByCategory.length === 0
-  ) {
+  if (!productsByCategory || productsByCategory.length === 0) {
     const error = new HttpError("Could not find any products", 404);
     return next(error);
   }
