@@ -122,6 +122,7 @@ const signup = async (req, res, next) => {
     likes: [],
     followers: [],
     following: [],
+    chats: []
   });
 
   try {
