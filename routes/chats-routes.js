@@ -5,5 +5,6 @@ const chatsController = require("../controllers/chats-controller");
 const router = express.Router();
 
 router.get("/:rid", chatsController.getChatRoomById);
+router.get("/:uid1/:uid2", chatsController.findMatchingRoom);
 
 module.exports = router;
