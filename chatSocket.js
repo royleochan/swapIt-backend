@@ -43,7 +43,7 @@ const chatSocket = (io) => {
                 chat.messages.push(msg);
                 await msg.save();
                 await chat.save();
-                io.to(socket.activeRoom).emit("message", msg);
+                socket.to(socket.activeRoom).emit("message", msg);
             } catch (e) {
                 console.error(e);
             }
