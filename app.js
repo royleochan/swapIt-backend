@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const socketio = require("socket.io");
 
 const HttpError = require("./models/http-error");
 
@@ -8,15 +9,14 @@ const usersRoutes = require("./routes/users-routes");
 const reviewsRoutes = require("./routes/reviews-routes");
 const chatsRoutes = require("./routes/chats-routes");
 
-
 const app = express();
 const port = process.env.PORT || 5000;
 const server = app.listen(port, () => {
-    console.log("Server listening on port: %s", port);
+  console.log("Server listening on port: %s", port);
 });
-const io = require("socket.io")(server);
-require('./chatSocket.js')(io);
-
+const io = socketio(server);
+const chatSocket = io.of("/chatSocket");
+require("./chatSocket.js")(chatSocket);
 
 app.use(express.json());
 app.use("/api/products", productsRoutes);
@@ -39,7 +39,7 @@ app.use((error, req, res, next) => {
 
 mongoose
   .connect(
-      `mongodb+srv://${ process.env.DB_USER }:${ process.env.DB_PASSWORD }@cluster0.dmnbw.mongodb.net/${ process.env.DB_NAME }?retryWrites=true&w=majority`,
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.dmnbw.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
