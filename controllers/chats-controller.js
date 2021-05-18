@@ -2,6 +2,25 @@ const HttpError = require("../models/http-error");
 const Chat = require("../models/chat");
 const User = require("../models/user");
 
+const getAllChatRooms = async (req, res, next) => {
+    const userId = req.params.uid;
+    let rooms;
+    try {
+        rooms = await User.findById(userId).populate("chats").populate("users");
+    } catch (err) {
+        const error = new HttpError(
+            "Something went wrong, could not find the chat rooms.",
+            500
+        );
+        return next(error);
+    }
+    if (!rooms) {
+        const error = new HttpError("Could not find chat room with the chat room id", 404);
+        return next(error);
+    }
+    res.json({ rooms: rooms.toObject({ getters: true }) });
+};
+
 const getChatRoomById = async (req, res, next) => {
     const chatRoomId = req.params.rid;
     let room;
@@ -42,6 +61,6 @@ const findMatchingRoom = async (req, res, next) => {
     res.json({ room: room.toObject({ getters: true }) });
 }
 
-
+exports.getAllChatRooms = getAllChatRooms;
 exports.getChatRoomById = getChatRoomById;
 exports.findMatchingRoom = findMatchingRoom;
