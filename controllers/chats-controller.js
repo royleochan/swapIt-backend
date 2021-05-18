@@ -6,7 +6,12 @@ const getAllChatRooms = async (req, res, next) => {
     const userId = req.params.uid;
     let rooms;
     try {
-        rooms = await User.findById(userId).populate("chats").populate("users");
+        rooms = await User.findById(userId).populate({
+            path: "chats",
+            populate: {
+                path: "users"
+            }
+        });
     } catch (err) {
         const error = new HttpError(
             "Something went wrong, could not find the chat rooms.",
