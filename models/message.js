@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 
 const messageSchema = new Schema({
     creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
-    content: { type: String, required: () => this.imageUrl === undefined },
+    content: { type: String, required: () => this.imageUrl === "" },
     imageUrl: { type: String },
 }, { timestamps: true });
 
