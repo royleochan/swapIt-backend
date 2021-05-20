@@ -1,6 +1,7 @@
 const HttpError = require("../models/http-error");
 const Chat = require("../models/chat");
 const User = require("../models/user");
+const mongoose = require("mongoose");
 
 const getAllChatRooms = async (req, res, next) => {
     const userId = req.params.uid;
@@ -45,6 +46,7 @@ const getChatRoomById = async (req, res, next) => {
     res.json({ room: room.toObject({ getters: true }) });
 };
 
+//Finds an active room if present, else creates a new active room
 const findMatchingRoom = async (req, res, next) => {
     const { uid1, uid2 } = req.params;
     let user, room;
@@ -59,11 +61,53 @@ const findMatchingRoom = async (req, res, next) => {
         );
         return next(error);
     }
+    //If active room is found
+    if (room) {
+        return res.json({ room: room.toObject({ getters: true }) });
+    }
+    //Else create active room
+    room = await createChatRoom();
     if (!room) {
-        const error = new HttpError("Could not find matching room with the given user ids", 404);
+        const error = new HttpError(
+            "Something went wrong, could not find the required matching room.",
+            500
+        );
         return next(error);
     }
     res.json({ room: room.toObject({ getters: true }) });
+}
+
+const createChatRoom = async (uid1, uid2) => {
+    let user1, user2;
+    try {
+        user1 = await User.findById(uid1);
+        user2 = await User.findById(uid2);
+    } catch (err) {
+        console.error(err);
+        return;
+    }
+
+    if (!user1 || !user2) {
+        console.error("Failed to get users");
+    }
+    const createdChat = new Chat({
+        users: [uid1, uid2],
+        messages: [],
+    })
+    try {
+        const sess = await mongoose.startSession();
+        sess.startTransaction();
+        await createdChat.save({ session: sess });
+        user1.chats.push(createdChat);
+        user2.chats.push(createdChat);
+        await user1.save({ session: sess });
+        await user2.save({ session: sess });
+        await sess.commitTransaction();
+    } catch (err) {
+        console.error(err);
+        return;
+    }
+    return createdChat.toObject({ getters: true });
 }
 
 exports.getAllChatRooms = getAllChatRooms;
