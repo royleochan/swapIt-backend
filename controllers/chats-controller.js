@@ -66,7 +66,7 @@ const findMatchingRoom = async (req, res, next) => {
         return res.json({ room: room.toObject({ getters: true }) });
     }
     //Else create active room
-    room = await createChatRoom();
+    room = await createChatRoom(uid1, uid2);
     if (!room) {
         const error = new HttpError(
             "Something went wrong, could not find the required matching room.",
