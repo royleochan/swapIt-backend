@@ -35,14 +35,16 @@ const getUserById = async (req, res, next) => {
 };
 
 const searchForUsers = async (req, res, next) => {
-  const { query } = req.params;
+  const { query, uid } = req.params;
   userPipeline.usernamePipeline[0].$search.autocomplete.query = query;
   // atlas autocomplete search on username field
   try {
     const aggCursor = await User.aggregate(userPipeline.usernamePipeline);
     const searchedUsers = [];
     aggCursor.forEach((user) => {
-      searchedUsers.push(user);
+      if (user._id.toString() !== uid) {
+        searchedUsers.push(user);
+      }
     });
 
     if (searchedUsers.length === 0) {

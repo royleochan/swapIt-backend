@@ -9,7 +9,7 @@ const router = express.Router();
 // get routes
 router.get("/product/:pid", usersController.getLikedUsers);
 router.get("/:uid", usersController.getUserById);
-router.get("/search/:query", usersController.searchForUsers);
+router.get("/search/:query/:uid", usersController.searchForUsers);
 
 // post routes
 router.post(
