@@ -244,6 +244,7 @@ const followUser = async (req, res, next) => {
   }
 
   try {
+    const sess = await mongoose.startSession();
     sess.startTransaction();
     loggedInUser.following.push(targetUserId);
     targetUser.followers.push(loggedInUserId);
@@ -279,6 +280,7 @@ const unfollowUser = async (req, res, next) => {
   }
 
   try {
+    const sess = await mongoose.startSession();
     sess.startTransaction();
     loggedInUser.following.pull(targetUserId);
     targetUser.followers.pull(loggedInUserId);
@@ -287,7 +289,7 @@ const unfollowUser = async (req, res, next) => {
     await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
-      "Something went wrong, could not follow user.",
+      "Something went wrong, could not unfollow user.",
       500
     );
     return next(error);
