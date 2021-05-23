@@ -245,7 +245,6 @@ const followUser = async (req, res, next) => {
   }
 
   try {
-    console.log("hi");
     const sess = await mongoose.startSession();
     sess.startTransaction();
     loggedInUser.following.push(targetUserId);
