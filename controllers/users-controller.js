@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
@@ -244,6 +245,7 @@ const followUser = async (req, res, next) => {
   }
 
   try {
+    console.log("hi");
     const sess = await mongoose.startSession();
     sess.startTransaction();
     loggedInUser.following.push(targetUserId);
