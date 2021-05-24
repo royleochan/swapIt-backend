@@ -46,18 +46,18 @@ const getProductsByUserId = async (req, res, next) => {
   });
 };
 
-const getAllProducts = async (req, res, next) => {
+const getAllFollowingProducts = async (req, res, next) => {
   const { uid } = req.params;
 
-  let availableProducts;
-  let availableProductsExcludingLikes;
+  let following;
+  let followingProducts;
   try {
-    availableProducts = await Product.find({
-      creator: { $ne: uid },
-    }).populate("creator");
-    availableProductsExcludingLikes = availableProducts.filter(
-      (product) => product.likes.indexOf(uid) === -1
-    );
+    following = await User.findById(uid, "following").populate({
+      path: "following",
+      select: "products -_id",
+      populate: { path: "products" },
+    });
+    followingProducts = following.following.map((user) => user.products).flat().reverse();
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later",
@@ -66,16 +66,13 @@ const getAllProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (
-    !availableProductsExcludingLikes ||
-    availableProductsExcludingLikes.length === 0
-  ) {
+  if (!followingProducts || followingProducts.length === 0) {
     const error = new HttpError("Could not find any products", 404);
     return next(error);
   }
 
   res.status(200).json({
-    products: availableProductsExcludingLikes.map((product) =>
+    products: followingProducts.map((product) =>
       product.toObject({ getters: true })
     ),
   });
@@ -523,7 +520,7 @@ const getLikedProducts = async (req, res, next) => {
 
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
-exports.getAllProducts = getAllProducts;
+exports.getAllFollowingProducts = getAllFollowingProducts;
 exports.getCategoryProducts = getCategoryProducts;
 exports.getMatchedProducts = getMatchedProducts;
 exports.searchForProducts = searchForProducts;
