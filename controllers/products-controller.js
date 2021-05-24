@@ -72,7 +72,7 @@ const getAllFollowingProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (!followingProducts || followingProducts.length === 0) {
+  if (!followingProducts) {
     const error = new HttpError("Could not find any products", 404);
     return next(error);
   }
