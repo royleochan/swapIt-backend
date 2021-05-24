@@ -55,9 +55,16 @@ const getAllFollowingProducts = async (req, res, next) => {
     following = await User.findById(uid, "following").populate({
       path: "following",
       select: "products -_id",
-      populate: { path: "products" },
+      populate: {
+        path: "products",
+        select: "creator",
+        populate: { path: "creator", select: "username profilePic" },
+      },
     });
-    followingProducts = following.following.map((user) => user.products).flat().reverse();
+    followingProducts = following.following
+      .map((user) => user.products)
+      .flat()
+      .reverse();
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later",
