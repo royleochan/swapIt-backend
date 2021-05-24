@@ -57,7 +57,6 @@ const getAllFollowingProducts = async (req, res, next) => {
       select: "products -_id",
       populate: {
         path: "products",
-        select: "creator",
         populate: { path: "creator", select: "username profilePic" },
       },
     });
