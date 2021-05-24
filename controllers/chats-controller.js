@@ -9,9 +9,10 @@ const getAllChatRooms = async (req, res, next) => {
     try {
         rooms = await User.findById(userId).populate({
             path: "chats",
-            populate: {
-                path: "users"
-            }
+            populate: [
+                { path: "users" },
+                { path: "messages" }
+            ]
         });
     } catch (err) {
         const error = new HttpError(
