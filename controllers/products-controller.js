@@ -160,7 +160,9 @@ const searchForProducts = async (req, res, next) => {
   }
 
   res.status(200).json({
-    products: searchedProducts,
+    products: searchedProducts.map((product) =>
+      product.toObject({ getters: true })
+    ),
   });
 };
 

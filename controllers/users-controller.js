@@ -54,7 +54,7 @@ const searchForUsers = async (req, res, next) => {
     }
 
     res.status(200).json({
-      users: searchedUsers,
+      users: searchedUsers.map((user) => user.toObject({ getters: true })),
     });
   } catch (err) {
     const error = new HttpError("No users found", 500);
