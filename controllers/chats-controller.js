@@ -98,6 +98,7 @@ const createChatRoom = async (uid1, uid2) => {
     const createdChat = new Chat({
         users: [uid1, uid2],
         messages: [],
+        lastSeen: [new Date(), new Date()],
     })
     try {
         const sess = await mongoose.startSession();
