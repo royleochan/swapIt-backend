@@ -35,6 +35,34 @@ const getUserById = async (req, res, next) => {
   }
 };
 
+const getFollowingUsers = async (req, res, next) => {
+  const { uid } = req.params;
+
+  try {
+    const users = await User.findById(uid, "following")
+      .populate("following")
+      .map((user) => user.toObject({ getters: true }));
+    res.json({ users });
+  } catch (err) {
+    const error = new HttpError("Could not find following", 404);
+    return next(error);
+  }
+};
+
+const getFollowersUsers = async (req, res, next) => {
+  const { uid } = req.params;
+
+  try {
+    const users = await User.findById(uid, "followers")
+      .populate("followers")
+      .map((user) => user.toObject({ getters: true }));
+    res.json({ users });
+  } catch (err) {
+    const error = new HttpError("Could not find followers", 404);
+    return next(error);
+  }
+};
+
 const searchForUsers = async (req, res, next) => {
   const { query, uid } = req.params;
   userPipeline.usernamePipeline[0].$search.autocomplete.query = query;
@@ -303,6 +331,8 @@ const unfollowUser = async (req, res, next) => {
 
 exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
+exports.getFollowingUsers = getFollowingUsers;
+exports.getFollowersUsers = getFollowersUsers;
 exports.searchForUsers = searchForUsers;
 exports.signup = signup;
 exports.login = login;

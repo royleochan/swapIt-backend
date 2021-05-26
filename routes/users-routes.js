@@ -10,6 +10,8 @@ const router = express.Router();
 router.get("/product/:pid", usersController.getLikedUsers);
 router.get("/:uid", usersController.getUserById);
 router.get("/search/:query/:uid", usersController.searchForUsers);
+router.get("/following/:uid", usersController.getFollowingUsers);
+router.get("/followers/:uid", usersController.getFollowersUsers);
 
 // post routes
 router.post(
