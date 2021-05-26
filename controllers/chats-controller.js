@@ -9,9 +9,10 @@ const getAllChatRooms = async (req, res, next) => {
     try {
         rooms = await User.findById(userId).populate({
             path: "chats",
-            populate: {
-                path: "users"
-            }
+            populate: [
+                { path: "users" },
+                { path: "messages" }
+            ]
         });
     } catch (err) {
         const error = new HttpError(
@@ -97,6 +98,7 @@ const createChatRoom = async (uid1, uid2) => {
     const createdChat = new Chat({
         users: [uid1, uid2],
         messages: [],
+        lastSeen: [new Date(), new Date()],
     })
     try {
         const sess = await mongoose.startSession();
