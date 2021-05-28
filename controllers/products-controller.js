@@ -302,7 +302,7 @@ const likeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
 
-  // find product
+  // find product and product creator
   let product;
   try {
     product = await Product.findById(productId);
@@ -494,7 +494,7 @@ const unlikeProduct = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(200).json({ message: "unLiked Product" });
+  res.status(200).json({ message: "Unliked Product", user });
 };
 
 const getLikedProducts = async (req, res, next) => {
