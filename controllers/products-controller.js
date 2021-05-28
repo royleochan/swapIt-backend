@@ -305,7 +305,7 @@ const likeProduct = async (req, res, next) => {
   // find product and product creator
   let product;
   try {
-    product = await Product.findById(productId);
+    product = await Product.findById(productId).populate("creator");
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not find product.",
@@ -425,7 +425,7 @@ const unlikeProduct = async (req, res, next) => {
 
   let product;
   try {
-    product = await Product.findById(productId);
+    product = await Product.findById(productId).populate("creator");
     const matchedProducts = await Product.findById(productId).populate(
       "matches",
       {
@@ -498,13 +498,11 @@ const unlikeProduct = async (req, res, next) => {
     return next(error);
   }
 
-  res
-    .status(200)
-    .json({
-      message: "Unliked Product",
-      user: user.toObject({ getters: true }),
-      product: product.toObject({ getters: true }),
-    });
+  res.status(200).json({
+    message: "Unliked Product",
+    user: user.toObject({ getters: true }),
+    product: product.toObject({ getters: true }),
+  });
 };
 
 const getLikedProducts = async (req, res, next) => {
