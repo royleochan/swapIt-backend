@@ -52,7 +52,7 @@ const chatSocket = (io) => {
                 await msg.save();
                 await chat.save();
                 socket.to(socket.activeRoom).emit("message", msg);
-                io.to(otherUserId).emit("new message", msg);
+                io.to(otherUserId).to(userId).emit("new message", msg);
             } catch (e) {
                 console.error(e);
             }
