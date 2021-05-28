@@ -412,7 +412,11 @@ const likeProduct = async (req, res, next) => {
     }
   }
 
-  res.status(200).json({ message: "Liked Product", user });
+  res.status(200).json({
+    message: "Liked Product",
+    user: user.toObject({ getters: true }),
+    product: product.toObject({ getters: true }),
+  });
 };
 
 const unlikeProduct = async (req, res, next) => {
@@ -494,7 +498,13 @@ const unlikeProduct = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(200).json({ message: "Unliked Product", user });
+  res
+    .status(200)
+    .json({
+      message: "Unliked Product",
+      user: user.toObject({ getters: true }),
+      product: product.toObject({ getters: true }),
+    });
 };
 
 const getLikedProducts = async (req, res, next) => {
