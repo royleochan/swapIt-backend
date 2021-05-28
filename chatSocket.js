@@ -36,8 +36,8 @@ const chatSocket = (io) => {
                 console.error(e);
             }
         });
-        socket.on("respond connected", (currUser) => {
-            socket.emit("connected response", currUser);
+        socket.on("respond connected", ({ chatId, currUser }) => {
+            socket.to(chatId).emit("connected response", currUser);
         });
         socket.on("message", async ({ otherUserId, userId, message, imageUrl, seen }) => {
             try {
@@ -52,7 +52,7 @@ const chatSocket = (io) => {
                 await msg.save();
                 await chat.save();
                 socket.to(socket.activeRoom).emit("message", msg);
-                socket.to(otherUserId).emit("new message", msg);
+                io.to(otherUserId).emit("new message", msg);
             } catch (e) {
                 console.error(e);
             }
