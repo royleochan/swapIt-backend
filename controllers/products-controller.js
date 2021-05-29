@@ -7,10 +7,10 @@ const User = require("../models/user");
 const productPipeline = require("../controllers/pipelines/products-search");
 
 const getProductById = async (req, res, next) => {
-  const { productId } = req.params;
+  const { pid } = req.params;
 
   try {
-    const product = await Product.findById(productId);
+    const product = await Product.findById(pid);
     res.json({ product: product.toObject({ getters: true }) });
   } catch (err) {
     const error = new HttpError("Could not find product for product id", 404);
