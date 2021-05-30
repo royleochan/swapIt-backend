@@ -39,7 +39,7 @@ const chatSocket = (io) => {
         socket.on("respond connected", ({ chatId, currUser }) => {
             socket.to(chatId).emit("connected response", currUser);
         });
-        socket.on("message", async ({ otherUserId, userId, message, imageUrl, seen }) => {
+        socket.on("message", async ({ chatId, otherUserId, userId, message, imageUrl, seen }) => {
             try {
                 let chat = await Chat.findById(socket.activeRoom);
                 let msg = new Message({
@@ -51,8 +51,9 @@ const chatSocket = (io) => {
                 chat.messages.push(msg);
                 await msg.save();
                 await chat.save();
-                socket.to(socket.activeRoom).emit("message", msg);
-                io.to(otherUserId).to(userId).emit("new message", msg);
+                // socket.to(socket.activeRoom).emit("message", msg); //Todo: Logic no longer requires
+                //Sends event to both parties as they have to update their messages in redux store
+                io.to(otherUserId).to(userId).emit("new message", { chatId: chatId, message: msg });
             } catch (e) {
                 console.error(e);
             }
