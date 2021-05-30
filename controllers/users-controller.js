@@ -139,9 +139,9 @@ const signup = async (req, res, next) => {
     name,
     username,
     email,
-    ...(profilePic !== undefined) && {profilePic},
-    ...(description !== undefined) && {description},
-    ...(location !== undefined) && {location},
+    ...(profilePic !== undefined && { profilePic }),
+    ...(description !== undefined && { description }),
+    ...(location !== undefined && { location }),
     password: hashedPassword,
     products: [],
     likes: [],
@@ -274,23 +274,28 @@ const followUser = async (req, res, next) => {
     return next(error);
   }
 
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-    loggedInUser.following.push(targetUserId);
-    targetUser.followers.push(loggedInUserId);
-    await loggedInUser.save();
-    await targetUser.save();
-    await sess.commitTransaction();
-  } catch (err) {
-    const error = new HttpError(
-      "Something went wrong, could not follow user.",
-      500
-    );
+  if (!loggedInUser.following.includes(targetUserId)) {
+    try {
+      const sess = await mongoose.startSession();
+      sess.startTransaction();
+      loggedInUser.following.push(targetUserId);
+      targetUser.followers.push(loggedInUserId);
+      await loggedInUser.save();
+      await targetUser.save();
+      await sess.commitTransaction();
+    } catch (err) {
+      const error = new HttpError(
+        "Something went wrong, could not follow user.",
+        500
+      );
+      return next(error);
+    }
+
+    res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
+  } else {
+    const error = new HttpError("Already followed user", 400);
     return next(error);
   }
-
-  res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
 };
 
 const unfollowUser = async (req, res, next) => {
