@@ -302,208 +302,221 @@ const deleteProduct = async (req, res, next) => {
 const likeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
-
-  // find product and product creator
-  let product;
   try {
-    product = await Product.findById(productId).populate("creator");
-  } catch (err) {
-    const error = new HttpError(
-      "Something went wrong, could not find product.",
-      500
-    );
-    return next(error);
-  }
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
 
-  if (!product) {
-    const error = new HttpError("Could not find product for this id", 404);
-    return next(error);
-  }
-
-  product.likes.push(userId);
-
-  // find user
-  let user;
-  try {
-    user = await User.findById(userId);
-    user.likes.push(product._id);
-  } catch (err) {
-    const error = new HttpError(
-      "Fetching user failed, please try again later",
-      500
-    );
-    return next(error);
-  }
-
-  if (!user) {
-    const error = new HttpError("Could not find user for this user id", 404);
-    return next(error);
-  }
-
-  let creator;
-  try {
-    creator = await User.findById(product.creator).populate("likes", {
-      price: 1,
-      allowance: 1,
-      creator: 1,
-      matches: 1,
-      title: 1,
-    });
-  } catch (err) {
-    const error = new HttpError(
-      "Fetching user failed, please try again later",
-      500
-    );
-    return next(error);
-  }
-
-  if (!creator) {
-    const error = new HttpError("Could not find user for this user id", 404);
-    return next(error);
-  }
-
-  // check for matches
-  const matchedItems = creator.likes
-    .filter((item) => {
-      return item.creator.toString() === user._id.toString();
-    })
-    .filter((item) => {
-      const prodMinPrice = product.price - product.allowance;
-      const prodMaxPrice = product.price + product.allowance;
-      const itemMinPrice = item.price - item.allowance;
-      const itemMaxPrice = item.price + item.allowance;
-
-      return (
-        (product.price >= itemMinPrice && product.price <= itemMaxPrice) ||
-        (item.price >= prodMinPrice && item.price <= prodMaxPrice) ||
-        prodMinPrice === itemMaxPrice ||
-        prodMaxPrice === itemMinPrice ||
-        itemMinPrice === prodMinPrice ||
-        itemMaxPrice === prodMaxPrice
+    // find product and product creator
+    let product;
+    try {
+      product = await Product.findById(productId).populate("creator");
+    } catch (err) {
+      const error = new HttpError(
+        "Something went wrong, could not find product.",
+        500
       );
-    });
+      return next(error);
+    }
 
-  // if there is a match
-  if (matchedItems.length !== 0) {
-    for (i = 0; i < matchedItems.length; i++) {
-      product.matches.push(matchedItems[i]._id);
-      matchedItems[i].matches.push(product._id);
+    if (!product) {
+      const error = new HttpError("Could not find product for this id", 404);
+      return next(error);
+    }
+
+    product.likes.push(userId);
+
+    // find user
+    let user;
+    try {
+      user = await User.findById(userId);
+      user.likes.push(product._id);
+    } catch (err) {
+      const error = new HttpError(
+        "Fetching user failed, please try again later",
+        500
+      );
+      return next(error);
+    }
+
+    if (!user) {
+      const error = new HttpError("Could not find logged in user", 404);
+      return next(error);
+    }
+
+    let creator;
+    try {
+      creator = await User.findById(product.creator).populate("likes", {
+        price: 1,
+        allowance: 1,
+        creator: 1,
+        matches: 1,
+        title: 1,
+      });
+    } catch (err) {
+      const error = new HttpError(
+        "Fetching user failed, please try again later",
+        500
+      );
+      return next(error);
+    }
+
+    if (!creator) {
+      const error = new HttpError("Could not find product creator", 404);
+      return next(error);
+    }
+
+    // check for matches
+    const matchedItems = creator.likes
+      .filter((item) => {
+        return item.creator.toString() === user._id.toString();
+      })
+      .filter((item) => {
+        const prodMinPrice = product.price - product.allowance;
+        const prodMaxPrice = product.price + product.allowance;
+        const itemMinPrice = item.price - item.allowance;
+        const itemMaxPrice = item.price + item.allowance;
+
+        return (
+          (product.price >= itemMinPrice && product.price <= itemMaxPrice) ||
+          (item.price >= prodMinPrice && item.price <= prodMaxPrice) ||
+          prodMinPrice === itemMaxPrice ||
+          prodMaxPrice === itemMinPrice ||
+          itemMinPrice === prodMinPrice ||
+          itemMaxPrice === prodMaxPrice
+        );
+      });
+
+    // if there is a match
+    if (matchedItems.length !== 0) {
+      for (i = 0; i < matchedItems.length; i++) {
+        product.matches.push(matchedItems[i]._id);
+        matchedItems[i].matches.push(product._id);
+        try {
+          await matchedItems[i].save({ session: sess });
+          await product.save({ session: sess });
+          await user.save({ session: sess });
+          await creator.save({ session: sess });
+        } catch (err) {
+          const error = new HttpError(
+            "Something went wrong, could not successfully save matches.",
+            500
+          );
+          return next(error);
+        }
+      }
+    } else {
       try {
-        // create and save
-        const sess = await mongoose.startSession();
-        sess.startTransaction();
-
-        await matchedItems[i].save({ session: sess });
-        await product.save({ session: sess });
-        await user.save({ session: sess });
-        await creator.save({ session: sess });
-        await sess.commitTransaction();
+        await product.save();
+        await user.save();
       } catch (err) {
-        console.log(err);
+        const error = new HttpError(
+          "Something went wrong, could not successfully save non-matches",
+          500
+        );
         return next(error);
       }
     }
-  } else {
-    try {
-      await product.save();
-      await user.save();
-    } catch (err) {
-      console.log(err);
-      return next(error);
-    }
+    await sess.commitTransaction();
+    res.status(200).json({
+      message: "Liked Product",
+      user: user.toObject({ getters: true }),
+      product: product.toObject({ getters: true }),
+    });
+  } catch (error) {
+    const error = new HttpError("Something went wrong.", 500);
+    return next(error);
   }
-
-  res.status(200).json({
-    message: "Liked Product",
-    user: user.toObject({ getters: true }),
-    product: product.toObject({ getters: true }),
-  });
 };
 
 const unlikeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
 
-  let product;
   try {
-    product = await Product.findById(productId).populate("creator");
-    const matchedProducts = await Product.findById(productId).populate(
-      "matches",
-      {
-        creator: 1,
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    let product;
+    try {
+      product = await Product.findById(productId).populate("creator");
+      const matchedProducts = await Product.findById(productId).populate(
+        "matches",
+        {
+          creator: 1,
+        }
+      );
+      let unmatchedProducts;
+      unmatchedProducts = matchedProducts.matches.filter(
+        (item) => item.creator.toString() === userId.toString()
+      );
+      for (i = 0; i < unmatchedProducts.length; i++) {
+        product.matches.pull(unmatchedProducts[i]);
       }
-    );
-    let unmatchedProducts;
-    unmatchedProducts = matchedProducts.matches.filter(
-      (item) => item.creator.toString() === userId.toString()
-    );
-    for (i = 0; i < unmatchedProducts.length; i++) {
-      product.matches.pull(unmatchedProducts[i]);
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError("Fetching product failed", 500);
+      return next(error);
     }
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not delete product.",
-      500
-    );
-    return next(error);
-  }
 
-  if (!product) {
-    const error = new HttpError("Could not find product for this id", 404);
-    return next(error);
-  }
+    if (!product) {
+      const error = new HttpError("Could not find product for this id", 404);
+      return next(error);
+    }
 
-  product.likes.pull(userId);
+    product.likes.pull(userId);
 
-  let user;
-  try {
-    user = await User.findById(userId);
-    user.likes.pull(product._id);
-    userProducts = await User.findById(userId).populate("products", {
-      matches: 1,
+    let user;
+    try {
+      user = await User.findById(userId);
+      user.likes.pull(product._id);
+      userProducts = await User.findById(userId).populate("products", {
+        matches: 1,
+      });
+      for (i = 0; i < userProducts.products.length; i++) {
+        userProducts.products[i].matches.pull(productId);
+        try {
+          await userProducts.products[i].save();
+        } catch (err) {
+          const error = new HttpError(
+            "Could not unmatch item, please try again later",
+            500
+          );
+          return next(error);
+        }
+      }
+    } catch (err) {
+      const error = new HttpError(
+        "Fetching user failed, please try again later",
+        500
+      );
+      return next(error);
+    }
+
+    if (!user) {
+      const error = new HttpError("Could not find user for this user id", 404);
+      return next(error);
+    }
+
+    try {
+      await product.save();
+      await user.save();
+    } catch (err) {
+      const error = new HttpError(
+        "Could not unlike item, please try again later",
+        500
+      );
+      return next(error);
+    }
+
+    res.status(200).json({
+      message: "Unliked Product",
+      user: user.toObject({ getters: true }),
+      product: product.toObject({ getters: true }),
     });
-    for (i = 0; i < userProducts.products.length; i++) {
-      userProducts.products[i].matches.pull(productId);
-      try {
-        await userProducts.products[i].save();
-      } catch (err) {
-        const error = new HttpError(
-          "Could not unlike item, please try again later",
-          500
-        );
-        return next(error);
-      }
-    }
-  } catch (err) {
-    const error = new HttpError(
-      "Fetching user failed, please try again later",
-      500
-    );
+    await sess.commitTransaction();
+  } catch (error) {
+    const error = new HttpError("Something went wrong.", 500);
     return next(error);
   }
-
-  if (!user) {
-    const error = new HttpError("Could not find user for this user id", 404);
-    return next(error);
-  }
-
-  try {
-    await product.save();
-    await user.save();
-  } catch (err) {
-    const error = new HttpError(
-      "Could not unlike item, please try again later",
-      500
-    );
-    return next(error);
-  }
-
-  res.status(200).json({
-    message: "Unliked Product",
-    user: user.toObject({ getters: true }),
-    product: product.toObject({ getters: true }),
-  });
 };
 
 const getLikedProducts = async (req, res, next) => {
