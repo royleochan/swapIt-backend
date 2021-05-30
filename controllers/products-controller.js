@@ -25,6 +25,7 @@ const getProductsByUserId = async (req, res, next) => {
   try {
     userWithProducts = await User.findById(uid).populate({
       path: "products",
+      populate: { path: "creator" },
     });
   } catch (err) {
     const error = new HttpError(
