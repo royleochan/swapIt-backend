@@ -323,18 +323,23 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    product.likes.push(userId);
-
     // find user
     let user;
     try {
       user = await User.findById(userId);
-      user.likes.push(product._id);
     } catch (err) {
       const error = new HttpError(
         "Fetching user failed, please try again later",
         500
       );
+      return next(error);
+    }
+
+    if (!product.likes.includes(userId)) {
+      product.likes.push(userId);
+      user.likes.push(product._id);
+    } else {
+      const error = new HttpError("Already liked item", 400);
       return next(error);
     }
 
@@ -422,7 +427,7 @@ const likeProduct = async (req, res, next) => {
       user: user.toObject({ getters: true }),
       product: product.toObject({ getters: true }),
     });
-  } catch (error) {
+  } catch (err) {
     const error = new HttpError("Something went wrong.", 500);
     return next(error);
   }
@@ -513,7 +518,7 @@ const unlikeProduct = async (req, res, next) => {
       product: product.toObject({ getters: true }),
     });
     await sess.commitTransaction();
-  } catch (error) {
+  } catch (err) {
     const error = new HttpError("Something went wrong.", 500);
     return next(error);
   }
