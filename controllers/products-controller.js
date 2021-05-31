@@ -351,7 +351,8 @@ const likeProduct = async (req, res, next) => {
     let creator;
     try {
       creator = await User.findById(product.creator).populate("likes", {
-        price: 1,
+        minPrice: 1,
+        maxPrice: 1,
         allowance: 1,
         creator: 1,
         matches: 1,
@@ -369,6 +370,10 @@ const likeProduct = async (req, res, next) => {
       const error = new HttpError("Could not find product creator", 404);
       return next(error);
     }
+
+    console.log(product.id);
+    console.log(creator);
+    console.log(user);
 
     // check for matches
     const matchedItems = creator.likes
