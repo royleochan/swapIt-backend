@@ -371,10 +371,6 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    console.log(product.id);
-    console.log(creator);
-    console.log(user);
-
     // check for matches
     const matchedItems = creator.likes
       .filter((item) => {
