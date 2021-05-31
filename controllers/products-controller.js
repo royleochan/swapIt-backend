@@ -10,7 +10,7 @@ const getProductById = async (req, res, next) => {
   const { pid } = req.params;
 
   try {
-    const product = await Product.findById(pid).populate("creator");
+    const product = await Product.findById(pid).populate("creator matches");
     res.json({ product: product.toObject({ getters: true }) });
   } catch (err) {
     const error = new HttpError("Could not find product for product id", 404);
