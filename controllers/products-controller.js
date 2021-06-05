@@ -2,6 +2,7 @@ const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
 const HttpError = require("../models/http-error");
+const Match = require("../models/match");
 const Product = require("../models/product");
 const User = require("../models/user");
 const productPipeline = require("../controllers/pipelines/products-search");
@@ -10,7 +11,7 @@ const getProductById = async (req, res, next) => {
   const { pid } = req.params;
 
   try {
-    const product = await await Product.findById(pid)
+    const product = await Product.findById(pid)
       .populate("creator")
       .populate({
         path: "matches",
@@ -307,6 +308,7 @@ const deleteProduct = async (req, res, next) => {
 const likeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
+
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
@@ -389,21 +391,26 @@ const likeProduct = async (req, res, next) => {
 
     // if there is a match
     if (matchedItems.length !== 0) {
-      for (i = 0; i < matchedItems.length; i++) {
-        product.matches.push(matchedItems[i]._id);
-        matchedItems[i].matches.push(product._id);
-        try {
+      try {
+        for (i = 0; i < matchedItems.length; i++) {
+          const newMatch = new Match({
+            productOneId: product._id,
+            productTwoId: matchedItems[i]._id,
+          });
+          await newMatch.save({ session: sess });
+          product.matches.push(newMatch);
+          matchedItems[i].matches.push(newMatch._id);
           await matchedItems[i].save({ session: sess });
           await product.save({ session: sess });
           await user.save({ session: sess });
           await creator.save({ session: sess });
-        } catch (err) {
-          const error = new HttpError(
-            "Something went wrong, could not successfully save matches.",
-            500
-          );
-          return next(error);
         }
+      } catch {
+        const error = new HttpError(
+          "Something went wrong, could not successfully save matches.",
+          500
+        );
+        return next(error);
       }
     } else {
       try {
@@ -417,7 +424,9 @@ const likeProduct = async (req, res, next) => {
         return next(error);
       }
     }
+
     await sess.commitTransaction();
+
     res.status(200).json({
       message: "Liked Product",
       user: user.toObject({ getters: true }),
