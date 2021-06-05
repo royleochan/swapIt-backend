@@ -2,7 +2,7 @@ const aws = require("aws-sdk");
 const { v4: uuidv4 } = require("uuid");
 
 const region = "ap-southeast-1";
-const bucketName = "swap-it";
+const bucketName = "swap-it-bucket";
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_KEY;
 
