@@ -11,7 +11,12 @@ const productSchema = new Schema(
     maxPrice: { type: Number, required: true },
     creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
     likes: [{ type: mongoose.Types.ObjectId, ref: "User" }],
-    matches: [{ type: mongoose.Types.ObjectId, ref: "Match" }],
+    matches: [
+      {
+        match: { type: mongoose.Types.ObjectId, ref: "Match" },
+        product: { type: mongoose.Types.ObjectId, ref: "Product" },
+      },
+    ],
     category: { type: String, required: true },
   },
   { timestamps: true }

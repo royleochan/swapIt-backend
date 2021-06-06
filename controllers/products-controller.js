@@ -6,6 +6,7 @@ const Match = require("../models/match");
 const Product = require("../models/product");
 const User = require("../models/user");
 const productPipeline = require("../controllers/pipelines/products-search");
+const match = require("../models/match");
 
 const getProductById = async (req, res, next) => {
   const { pid } = req.params;
@@ -15,9 +16,17 @@ const getProductById = async (req, res, next) => {
       .populate("creator")
       .populate({
         path: "matches",
-        populate: { path: "creator" },
+        populate: {
+          path: "product",
+          populate: {
+            path: "creator",
+          },
+        },
       });
-    res.json({ product: product.toObject({ getters: true }) });
+
+    res.json({
+      product: product.toObject({ getters: true }),
+    });
   } catch (err) {
     const error = new HttpError("Could not find product for product id", 404);
     return next(error);
@@ -114,32 +123,6 @@ const getCategoryProducts = async (req, res, next) => {
 
   res.status(200).json({
     products: productsByCategory,
-  });
-};
-
-const getMatchedProducts = async (req, res, next) => {
-  const prodId = req.params.pid;
-
-  let matchedProducts;
-  try {
-    matchedProducts = await Product.findById(prodId).populate("matches");
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Fetching matches failed, please try again later",
-      500
-    );
-    return next(error);
-  }
-  if (!matchedProducts.matches || matchedProducts.matches.length === 0) {
-    const error = new HttpError("Could not find any matches", 404);
-    return next(error);
-  }
-
-  res.status(200).json({
-    data: matchedProducts.matches.map((product) =>
-      product.toObject({ getters: true })
-    ),
   });
 };
 
@@ -398,8 +381,14 @@ const likeProduct = async (req, res, next) => {
             productTwoId: matchedItems[i]._id,
           });
           await newMatch.save({ session: sess });
-          product.matches.push(newMatch);
-          matchedItems[i].matches.push(newMatch._id);
+          product.matches.push({
+            match: newMatch._id,
+            product: matchedItems[i]._id,
+          });
+          matchedItems[i].matches.push({
+            match: newMatch._id,
+            product: product._id,
+          });
           await matchedItems[i].save({ session: sess });
           await product.save({ session: sess });
           await user.save({ session: sess });
@@ -424,9 +413,7 @@ const likeProduct = async (req, res, next) => {
         return next(error);
       }
     }
-
     await sess.commitTransaction();
-
     res.status(200).json({
       message: "Liked Product",
       user: user.toObject({ getters: true }),
@@ -445,24 +432,37 @@ const unlikeProduct = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
+
+    // find product that has been unliked and filter away all matches with the user's items
     let product;
     try {
-      product = await Product.findById(productId).populate("creator");
-      const matchedProducts = await Product.findById(productId).populate(
-        "matches",
-        {
-          creator: 1,
-        }
+      product = await Product.findById(productId)
+        .populate("creator")
+        .populate({
+          path: "matches",
+          populate: {
+            path: "product",
+          },
+        });
+
+      // remove matches from the matches collection
+      let unmatchedProductsMatches;
+      unmatchedProductsMatches = product.matches.filter(
+        (obj) => obj.product.creator.toString() === userId.toString()
       );
-      let unmatchedProducts;
-      unmatchedProducts = matchedProducts.matches.filter(
-        (item) => item.creator.toString() === userId.toString()
-      );
-      for (i = 0; i < unmatchedProducts.length; i++) {
-        product.matches.pull(unmatchedProducts[i]);
+      for (let i = 0; i < unmatchedProductsMatches.length; i++) {
+        let matchToDelete = await Match.findById(
+          unmatchedProductsMatches[i].match
+        );
+        await matchToDelete.remove({ session: sess });
       }
+
+      let newMatchedProductsMatches;
+      newMatchedProductsMatches = product.matches.filter(
+        (match) => match.product.creator.toString() !== userId.toString()
+      );
+      product.matches = newMatchedProductsMatches;
     } catch (err) {
-      console.log(err);
       const error = new HttpError("Fetching product failed", 500);
       return next(error);
     }
@@ -472,19 +472,24 @@ const unlikeProduct = async (req, res, next) => {
       return next(error);
     }
 
+    // remove userId from likes array of the unliked product
     product.likes.pull(userId);
 
+    // find user who unliked the product and remove all matches of his products with unliked product
     let user;
     try {
-      user = await User.findById(userId);
-      user.likes.pull(product._id);
-      userProducts = await User.findById(userId).populate("products", {
+      user = await User.findById(userId).populate("products", {
         matches: 1,
       });
-      for (i = 0; i < userProducts.products.length; i++) {
-        userProducts.products[i].matches.pull(productId);
+      // remove product id from user likes array
+      user.likes.pull(product._id);
+      for (i = 0; i < user.products.length; i++) {
+        let newMatchedProductsMatches = user.products[i].matches.filter(
+          (match) => match.product.toString() !== productId.toString()
+        );
+        user.products[i].matches = newMatchedProductsMatches;
         try {
-          await userProducts.products[i].save();
+          await user.products[i].save();
         } catch (err) {
           const error = new HttpError(
             "Could not unmatch item, please try again later",
@@ -562,7 +567,6 @@ exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.getAllFollowingProducts = getAllFollowingProducts;
 exports.getCategoryProducts = getCategoryProducts;
-exports.getMatchedProducts = getMatchedProducts;
 exports.searchForProducts = searchForProducts;
 exports.createProduct = createProduct;
 exports.updateProduct = updateProduct;
