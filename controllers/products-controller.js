@@ -17,7 +17,7 @@ const getProductById = async (req, res, next) => {
       .populate({
         path: "matches",
         populate: {
-          path: "product",
+          path: "product match",
           populate: {
             path: "creator",
           },
