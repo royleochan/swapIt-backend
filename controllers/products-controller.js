@@ -6,7 +6,6 @@ const Match = require("../models/match");
 const Product = require("../models/product");
 const User = require("../models/user");
 const productPipeline = require("../controllers/pipelines/products-search");
-const match = require("../models/match");
 
 const getProductById = async (req, res, next) => {
   const { pid } = req.params;
