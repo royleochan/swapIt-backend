@@ -9,6 +9,8 @@ const productsRoutes = require("./routes/products-routes");
 const usersRoutes = require("./routes/users-routes");
 const reviewsRoutes = require("./routes/reviews-routes");
 const chatsRoutes = require("./routes/chats-routes");
+const matchesRoutes = require("./routes/matches-routes");
+const reportsRoutes = require("./routes/reports-routes");
 
 // start server
 const app = express();
@@ -28,6 +30,8 @@ app.use("/api/products", productsRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/reviews", reviewsRoutes);
 app.use("/api/chats", chatsRoutes);
+app.use("/api/matches", matchesRoutes);
+app.use("/api/reports", reportsRoutes);
 app.get("/api/s3Url", async (req, res) => {
   const url = await s3GenerateUploadURL();
   res.send({ url });
