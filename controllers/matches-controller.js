@@ -114,7 +114,7 @@ const acceptRequest = async (req, res, next) => {
           (pid.toString() === obj.match.productTwoId.toString() &&
             !obj.match.productOneIsRequested))
     );
-    if (filterOtherParty.length > 0) {
+    if (filterOtherParty.length <= 0) {
       const error = new HttpError(
         "Cannot accept request that does not exist.",
         400
