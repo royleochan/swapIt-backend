@@ -81,14 +81,14 @@ const getAllFollowingProducts = async (req, res, next) => {
       .reverse();
   } catch (err) {
     const error = new HttpError(
-      "Fetching products failed, please try again later",
+      "Fetching products failed, please try again later.",
       500
     );
     return next(error);
   }
 
   if (!followingProducts) {
-    const error = new HttpError("Could not find any products", 404);
+    const error = new HttpError("Could not find any products.", 404);
     return next(error);
   }
 
@@ -109,14 +109,14 @@ const getCategoryProducts = async (req, res, next) => {
     }).populate("creator");
   } catch (err) {
     const error = new HttpError(
-      "Fetching products failed, please try again later",
+      "Fetching products failed, please try again later.",
       500
     );
     return next(error);
   }
 
   if (!productsByCategory || productsByCategory.length === 0) {
-    const error = new HttpError("Could not find any products", 404);
+    const error = new HttpError("No products found in this category.", 404);
     return next(error);
   }
 
@@ -188,14 +188,14 @@ const createProduct = async (req, res, next) => {
     user = await User.findById(creator);
   } catch (err) {
     const error = new HttpError(
-      "Creating product failed, please try again",
+      "Creating product failed, please try again.",
       500
     );
     return next(error);
   }
 
   if (!user) {
-    const error = new HttpError("Could not find user for provided id", 404);
+    const error = new HttpError("Could not find user.", 404);
     return next(error);
   }
 
@@ -226,7 +226,7 @@ const updateProduct = async (req, res, next) => {
     product = await Product.findById(productId);
   } catch (err) {
     const error = new HttpError(
-      "Something went wrong, could not find a product.",
+      "Something went wrong, could not find the product.",
       500
     );
     return next(error);
@@ -241,7 +241,7 @@ const updateProduct = async (req, res, next) => {
     await product.save();
   } catch (err) {
     const error = new HttpError(
-      "Something went wrong, could not update a product.",
+      "Something went wrong, could not update the product.",
       500
     );
     return next(error);
