@@ -1,13 +1,10 @@
 const { validationResult } = require("express-validator");
-const { Expo } = require("expo-server-sdk");
 const mongoose = require("mongoose");
 
 const HttpError = require("../models/http-error");
 const Review = require("../models/review");
 const User = require("../models/user");
-
-// Create a new Expo SDK client
-let expo = new Expo();
+const Match = require("../models/match");
 
 const getReviewsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
@@ -60,13 +57,14 @@ const createReview = async (req, res, next) => {
     throw new HttpError("Invalid inputs passed, please check your data", 422);
   }
 
-  const { description, creator, reviewed, rating, creatorName } = req.body;
+  const { description, creator, reviewed, rating, matchId, pid } = req.body;
 
   const createdReview = new Review({
     description,
     creator,
     reviewed,
     rating,
+    matchId,
   });
 
   let userReviewed;
@@ -86,9 +84,18 @@ const createReview = async (req, res, next) => {
     return next(error);
   }
 
+  let match;
+
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
+    match = await Match.findById(matchId);
+    if (pid.toString() === match.productOneId.toString()) {
+      match.productOneIsReviewed = true;
+    } else {
+      match.productTwoIsReviewed = true;
+    }
+    await match.save({ session: sess });
     await createdReview.save({ session: sess });
     userReviewed.reviews.push(createdReview);
     await userReviewed.save({ session: sess });

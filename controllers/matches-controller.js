@@ -101,7 +101,10 @@ const acceptRequest = async (req, res, next) => {
             obj.match.productTwoIsRequested))
     );
     if (filterRequest.length > 0) {
-      const error = new HttpError("Already sent out a request.", 400);
+      const error = new HttpError(
+        "Already sent out a request. Please cancel your other request before accepting.",
+        400
+      );
       return next(error);
     }
 
@@ -109,16 +112,14 @@ const acceptRequest = async (req, res, next) => {
     const filterOtherParty = matchesArray.filter(
       (obj) =>
         obj.match._id.toString() === mid.toString() &&
-        (
-          (pid.toString() === obj.match.productOneId.toString() &&
-            obj.match.productTwoIsRequested) ||
+        ((pid.toString() === obj.match.productOneId.toString() &&
+          obj.match.productTwoIsRequested) ||
           (pid.toString() === obj.match.productTwoId.toString() &&
-            obj.match.productOneIsRequested)
-        )
+            obj.match.productOneIsRequested))
     );
     if (filterOtherParty.length <= 0) {
       const error = new HttpError(
-        "Cannot accept request that does not exist.",
+        "Cannot accept request that does not exist. Other user might have cancelled their request. Please refresh.",
         400
       );
       return next(error);
