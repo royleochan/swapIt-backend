@@ -109,7 +109,7 @@ const acceptRequest = async (req, res, next) => {
     const filterOtherParty = matchesArray.filter(
       (obj) =>
         obj.match._id.toString() === mid.toString() &&
-        !(
+        (
           (pid.toString() === obj.match.productOneId.toString() &&
             obj.match.productTwoIsRequested) ||
           (pid.toString() === obj.match.productTwoId.toString() &&
