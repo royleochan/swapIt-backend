@@ -21,7 +21,7 @@ const sendRequest = async (req, res, next) => {
     // check if already accepted another match (cannot)
     const filterAccept = matchesArray.filter((obj) => obj.match.isConfirmed);
     if (filterAccept.length > 0) {
-      const error = new HttpError("User already accepted a match request", 400);
+      const error = new HttpError("Already accepted a match request", 400);
       return next(error);
     }
 
@@ -51,7 +51,7 @@ const sendRequest = async (req, res, next) => {
           obj.match.productTwoIsRequested)
     );
     if (filterRequest.length > 0) {
-      const error = new HttpError("User already sent out a request.", 400);
+      const error = new HttpError("Already sent out a request.", 400);
       return next(error);
     }
 
@@ -87,7 +87,7 @@ const acceptRequest = async (req, res, next) => {
     // check if already accepted match (cannot)
     const filterAccept = matchesArray.filter((obj) => obj.match.isConfirmed);
     if (filterAccept.length > 0) {
-      const error = new HttpError("User already accepted a match request", 400);
+      const error = new HttpError("Already accepted a match request", 400);
       return next(error);
     }
 
@@ -101,7 +101,7 @@ const acceptRequest = async (req, res, next) => {
             obj.match.productTwoIsRequested))
     );
     if (filterRequest.length > 0) {
-      const error = new HttpError("User already sent out a request.", 400);
+      const error = new HttpError("Already sent out a request.", 400);
       return next(error);
     }
 
@@ -152,7 +152,7 @@ const cancelRequest = async (req, res, next) => {
     // check if already accepted match (cannot)
     const filterAccept = matchesArray.filter((obj) => obj.match.isConfirmed);
     if (filterAccept.length > 0) {
-      const error = new HttpError("User already accepted a match request", 400);
+      const error = new HttpError("Already accepted a match request", 400);
       return next(error);
     }
 
