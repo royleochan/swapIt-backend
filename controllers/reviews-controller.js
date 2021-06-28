@@ -11,7 +11,8 @@ const getReviewByMatchId = async (req, res, next) => {
 
   let review;
   try {
-    review = await Review.find({ creator: uid, matchId: mid });
+    reviews = await Review.find({ creator: uid, matchId: mid });
+    review = reviews[0]; // only a unique review given uid and mid
   } catch (err) {
     const error = new HttpError(
       "Fetching reviews failed, please try again later",
