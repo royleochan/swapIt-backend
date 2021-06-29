@@ -14,6 +14,7 @@ const userSchema = new Schema(
     products: [
       { type: mongoose.Types.ObjectId, required: true, ref: "Product" },
     ],
+    reviewRating: { type: Number, default: 0 },
     reviews: [{ type: mongoose.Types.ObjectId, required: true, ref: "Review" }],
     likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
     followers: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],

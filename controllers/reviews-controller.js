@@ -95,7 +95,7 @@ const createReview = async (req, res, next) => {
   let userReviewed;
 
   try {
-    userReviewed = await User.findById(reviewed);
+    userReviewed = await User.findById(reviewed).populate("reviews");
   } catch (err) {
     const error = new HttpError(
       "Uploading review failed, please try again",
@@ -123,10 +123,14 @@ const createReview = async (req, res, next) => {
     await match.save({ session: sess });
     await createdReview.save({ session: sess });
     userReviewed.reviews.push(createdReview);
+    userReviewed.reviewRating = (
+      userReviewed.reviews.reduce((totalReviewRating, review) => {
+        return totalReviewRating + review.rating;
+      }, 0) / userReviewed.reviews.length
+    ).toFixed(1);
     await userReviewed.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
-    console.log(err);
     const error = new HttpError(
       "Failed to upload review, please try again.",
       500
