@@ -34,10 +34,19 @@ const getReviewByMatchId = async (req, res, next) => {
 const getReviewsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
-  let userWithReviews;
+  let reviews;
   try {
-    userWithReviews = await User.findById(userId).populate("reviews");
+    reviews = await User.findById(userId)
+      .populate({
+        path: "reviews",
+        populate: {
+          path: "creator",
+          select: "profilePic name",
+        },
+      })
+      .select("reviews");
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Fetching reviews failed, please try again later",
       500
@@ -45,35 +54,12 @@ const getReviewsByUserId = async (req, res, next) => {
     return next(error);
   }
 
-  if (!userWithReviews || userWithReviews.reviews.length === 0) {
+  if (!reviews) {
     const error = new HttpError("Could not find reviews for user id", 404);
     return next(error);
   }
 
-  let reviewRating = userWithReviews.reviews.reduce(
-    (totalReviewRating, review) => {
-      return totalReviewRating + review.rating;
-    },
-    0
-  );
-
-  reviewRating = reviewRating / userWithReviews.reviews.length;
-
-  const result = await Promise.all(
-    userWithReviews.reviews.map(async (review) => {
-      const creator = await User.findById(review.creator, {
-        name: 1,
-        profilePic: 1,
-      });
-      review.creator = creator;
-      return review.toObject({ getters: true });
-    })
-  );
-
-  res.json({
-    reviews: result,
-    reviewRating,
-  });
+  res.json(reviews);
 };
 
 const createReview = async (req, res, next) => {
