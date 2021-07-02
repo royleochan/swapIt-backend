@@ -1,5 +1,5 @@
-const Chat = require("./models/chat");
-const Message = require("./models/message");
+const Chat = require("../models/chat");
+const Message = require("../models/message");
 
 const updateMessagesSeen = async (chatId, currUser) => {
     try {

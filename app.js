@@ -2,7 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const socketio = require("socket.io");
 
-const s3GenerateUploadURL = require("./s3.js");
+const s3GenerateUploadURL = require("./services/s3");
 const HttpError = require("./models/http-error");
 
 const productsRoutes = require("./routes/products-routes");
@@ -22,7 +22,7 @@ const server = app.listen(port, () => {
 // start chat socket
 const io = socketio(server);
 const chatSocket = io.of("/chatSocket");
-require("./chatSocket.js")(chatSocket);
+require("./services/chatSocket")(chatSocket);
 
 // connect routes
 app.use(express.json());
