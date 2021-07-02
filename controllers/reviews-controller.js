@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
+const sendPushNotification = require("../services/notification");
 const HttpError = require("../models/http-error");
 const Review = require("../models/review");
 const User = require("../models/user");
@@ -33,6 +34,12 @@ const getReviewByMatchId = async (req, res, next) => {
 
 const getReviewsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
+
+  sendPushNotification(
+    "ExponentPushToken[CI4cYHCD-MNOBTOf6sCQlt]",
+    "New Match",
+    "Testing"
+  );
 
   let reviews;
   try {
