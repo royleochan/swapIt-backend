@@ -1,7 +1,7 @@
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
-const sendPushNotification = require("../services/notification");
+const sendPushNotification = require("../services/pushNotification");
 const HttpError = require("../models/http-error");
 const Match = require("../models/match");
 const Product = require("../models/product");

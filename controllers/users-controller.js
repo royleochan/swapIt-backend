@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
-const sendPushNotification = require("../services/notification");
+const sendPushNotification = require("../services/pushNotification");
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
 const Product = require("../models/product");
