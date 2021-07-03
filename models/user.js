@@ -21,6 +21,9 @@ const userSchema = new Schema(
     followers: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     following: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     chats: [{ type: mongoose.Types.ObjectId, required: true, ref: "Chat" }],
+    notifications: [
+      { type: mongoose.Types.ObjectId, required: true, ref: "Notification" },
+    ],
   },
   { timestamps: true }
 );
