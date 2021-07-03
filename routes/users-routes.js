@@ -31,5 +31,6 @@ router.patch("/follow/:uid", usersController.followUser);
 router.patch("/unfollow/:uid", usersController.unfollowUser);
 router.use(checkAuth);
 router.patch("/:uid", usersController.updateUser);
+router.patch("/pushToken/:uid", usersController.updatePushToken);
 
 module.exports = router;

@@ -334,6 +334,36 @@ const unfollowUser = async (req, res, next) => {
   res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
 };
 
+const updatePushToken = async (req, res, next) => {
+  const { pushToken } = req.body;
+  const userId = req.params.uid;
+
+  let user;
+  try {
+    user = await User.findById(userId).populate("products");
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a user.",
+      500
+    );
+    return next(error);
+  }
+
+  user.pushToken = pushToken;
+
+  try {
+    await user.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update push token.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ user: user.toObject({ getters: true }) });
+};
+
 exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
 exports.getFollowingUsers = getFollowingUsers;
@@ -344,3 +374,4 @@ exports.login = login;
 exports.updateUser = updateUser;
 exports.followUser = followUser;
 exports.unfollowUser = unfollowUser;
+exports.updatePushToken = updatePushToken;

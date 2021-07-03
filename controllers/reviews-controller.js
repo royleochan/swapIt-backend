@@ -35,12 +35,6 @@ const getReviewByMatchId = async (req, res, next) => {
 const getReviewsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
-  sendPushNotification(
-    "ExponentPushToken[CI4cYHCD-MNOBTOf6sCQlt]",
-    "New Match",
-    "Testing"
-  );
-
   let reviews;
   try {
     reviews = await User.findById(userId)
@@ -53,7 +47,6 @@ const getReviewsByUserId = async (req, res, next) => {
       })
       .select("reviews");
   } catch (err) {
-    console.log(err);
     const error = new HttpError(
       "Fetching reviews failed, please try again later",
       500
