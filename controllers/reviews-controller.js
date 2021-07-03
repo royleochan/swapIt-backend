@@ -79,9 +79,11 @@ const createReview = async (req, res, next) => {
   });
 
   let userReviewed;
+  let loggedInUser;
 
   try {
     userReviewed = await User.findById(reviewed).populate("reviews");
+    loggedInUser = await User.findById(creator);
   } catch (err) {
     const error = new HttpError(
       "Uploading review failed, please try again",
@@ -123,6 +125,13 @@ const createReview = async (req, res, next) => {
     );
     return next(error);
   }
+
+  // Send Notification
+  sendPushNotification(
+    userReviewed.pushToken,
+    "New Review",
+    `${loggedInUser.name} left you a review`
+  );
 
   res.status(201).json({
     review: createdReview.toObject({ getters: true }),

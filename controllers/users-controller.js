@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
+const sendPushNotification = require("../services/notification");
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
 const Product = require("../models/product");
@@ -290,6 +291,13 @@ const followUser = async (req, res, next) => {
       );
       return next(error);
     }
+
+    // Send Notification
+    sendPushNotification(
+      targetUser.pushToken,
+      "New Follow",
+      `${loggedInUser.name} followed you`
+    );
 
     res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
   } else {

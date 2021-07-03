@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
+const sendPushNotification = require("../services/notification");
 const HttpError = require("../models/http-error");
 const Match = require("../models/match");
 const Product = require("../models/product");
@@ -418,6 +419,24 @@ const likeProduct = async (req, res, next) => {
       user: user.toObject({ getters: true }),
       product: product.toObject({ getters: true }),
     });
+
+    // Send Notification For Like
+    let targetUser = product.creator;
+    const { pushToken } = targetUser;
+    await sendPushNotification(
+      pushToken,
+      "New Like",
+      `${user.name} liked your ${product.title}`
+    );
+
+    // Send Notification(s) For Matches
+    for (let i = 0; i < matchedItems.length; i++) {
+      await sendPushNotification(
+        pushToken,
+        "New Match",
+        `${matchedItems[i].title} matched with your ${product.title}`
+      );
+    }
   } catch (err) {
     const error = new HttpError("Something went wrong.", 500);
     return next(error);
