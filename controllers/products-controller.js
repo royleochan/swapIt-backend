@@ -6,6 +6,7 @@ const HttpError = require("../models/http-error");
 const Match = require("../models/match");
 const Product = require("../models/product");
 const User = require("../models/user");
+const Notification = require("../models/notification");
 const productPipeline = require("../controllers/pipelines/products-search");
 
 const getProductById = async (req, res, next) => {
@@ -390,9 +391,6 @@ const likeProduct = async (req, res, next) => {
             product: product._id,
           });
           await matchedItems[i].save({ session: sess });
-          await product.save({ session: sess });
-          await user.save({ session: sess });
-          await creator.save({ session: sess });
         }
       } catch {
         const error = new HttpError(
@@ -401,33 +399,26 @@ const likeProduct = async (req, res, next) => {
         );
         return next(error);
       }
-    } else {
-      try {
-        await product.save();
-        await user.save();
-      } catch (err) {
-        const error = new HttpError(
-          "Something went wrong, could not successfully save non-matches",
-          500
-        );
-        return next(error);
-      }
     }
-    await sess.commitTransaction();
-    res.status(200).json({
-      message: "Liked Product",
-      user: user.toObject({ getters: true }),
-      product: product.toObject({ getters: true }),
-    });
 
     // Send Notification For Like
-    let targetUser = product.creator;
-    const { pushToken } = targetUser;
+    let notification;
+    const { pushToken } = creator;
     await sendPushNotification(
       pushToken,
       "New Like",
       `${user.name} liked your ${product.title}`
     );
+    notification = new Notification({
+      creator: userId,
+      targetUser: creator._id,
+      productId: product._id,
+      description: `${user.name} liked your ${product.title}`,
+      type: "LIKE",
+      isRead: false,
+    });
+    await notification.save({ session: sess });
+    creator.notifications.push(notification._id);
 
     // Send Notification(s) For Matches
     for (let i = 0; i < matchedItems.length; i++) {
@@ -436,8 +427,31 @@ const likeProduct = async (req, res, next) => {
         "New Match",
         `${matchedItems[i].title} matched with your ${product.title}`
       );
+      notification = new Notification({
+        creator: userId,
+        targetUser: creator._id,
+        productId: product._id,
+        matchedProductId: matchedItems[i]._id,
+        description: `${matchedItems[i].title} matched with your ${product.title}`,
+        type: "MATCH",
+        isRead: false,
+      });
+      await notification.save({ session: sess });
+      creator.notifications.push(notification._id);
     }
+
+    await creator.save({ session: sess });
+    await product.save({ session: sess });
+    await user.save({ session: sess });
+    await sess.commitTransaction();
+
+    res.status(200).json({
+      message: "Liked Product",
+      user: user.toObject({ getters: true }),
+      product: product.toObject({ getters: true }),
+    });
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Something went wrong.", 500);
     return next(error);
   }

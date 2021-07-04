@@ -10,6 +10,7 @@ const usersRoutes = require("./routes/users-routes");
 const reviewsRoutes = require("./routes/reviews-routes");
 const chatsRoutes = require("./routes/chats-routes");
 const matchesRoutes = require("./routes/matches-routes");
+const notificationsRoutes = require("./routes/notifications-routes");
 const reportsRoutes = require("./routes/reports-routes");
 
 // start server
@@ -31,6 +32,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/reviews", reviewsRoutes);
 app.use("/api/chats", chatsRoutes);
 app.use("/api/matches", matchesRoutes);
+app.use("/api/notifications", notificationsRoutes);
 app.use("/api/reports", reportsRoutes);
 app.get("/api/s3Url", async (req, res) => {
   const url = await s3GenerateUploadURL();

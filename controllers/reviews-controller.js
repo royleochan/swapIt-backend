@@ -6,6 +6,7 @@ const HttpError = require("../models/http-error");
 const Review = require("../models/review");
 const User = require("../models/user");
 const Match = require("../models/match");
+const Notification = require("../models/notification");
 
 const getReviewByMatchId = async (req, res, next) => {
   const { uid, mid } = req.params;
@@ -99,9 +100,9 @@ const createReview = async (req, res, next) => {
 
   let match;
 
+  const sess = await mongoose.startSession();
+  sess.startTransaction();
   try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
     match = await Match.findById(matchId);
     if (pid.toString() === match.productOneId.toString()) {
       match.productOneIsReviewed = true;
@@ -116,8 +117,6 @@ const createReview = async (req, res, next) => {
         return totalReviewRating + review.rating;
       }, 0) / userReviewed.reviews.length
     ).toFixed(1);
-    await userReviewed.save({ session: sess });
-    await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
       "Failed to upload review, please try again.",
@@ -127,12 +126,25 @@ const createReview = async (req, res, next) => {
   }
 
   // Send Notification
+  let notification;
   sendPushNotification(
     userReviewed.pushToken,
     "New Review",
     `${loggedInUser.name} left you a review`
   );
 
+  notification = new Notification({
+    creator: creator,
+    targetUser: reviewed,
+    description: `${loggedInUser.name} left you a review`,
+    type: "REVIEW",
+    isRead: false,
+  });
+  await notification.save({ session: sess });
+  userReviewed.notifications.push(notification._id);
+
+  await userReviewed.save({ session: sess });
+  await sess.commitTransaction();
   res.status(201).json({
     review: createdReview.toObject({ getters: true }),
   });

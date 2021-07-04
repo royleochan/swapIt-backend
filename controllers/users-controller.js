@@ -7,6 +7,7 @@ const sendPushNotification = require("../services/pushNotification");
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
 const Product = require("../models/product");
+const Notification = require("../models/notification");
 const userPipeline = require("../controllers/pipelines/user-search");
 
 const getLikedUsers = async (req, res, next) => {
@@ -282,6 +283,23 @@ const followUser = async (req, res, next) => {
       sess.startTransaction();
       loggedInUser.following.push(targetUserId);
       targetUser.followers.push(loggedInUserId);
+
+      // Send Notification
+      sendPushNotification(
+        targetUser.pushToken,
+        "New Follow",
+        `${loggedInUser.name} followed you`
+      );
+      notification = new Notification({
+        creator: loggedInUserId,
+        targetUser: targetUserId,
+        description: `${loggedInUser.name} followed you`,
+        type: "FOLLOW",
+        isRead: false,
+      });
+      await notification.save({ session: sess });
+      targetUser.notifications.push(notification._id);
+
       await loggedInUser.save();
       await targetUser.save();
       await sess.commitTransaction();
@@ -292,13 +310,6 @@ const followUser = async (req, res, next) => {
       );
       return next(error);
     }
-
-    // Send Notification
-    sendPushNotification(
-      targetUser.pushToken,
-      "New Follow",
-      `${loggedInUser.name} followed you`
-    );
 
     res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
   } else {
@@ -363,6 +374,7 @@ const updatePushToken = async (req, res, next) => {
   try {
     await user.save();
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not update push token.",
       500
