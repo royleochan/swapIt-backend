@@ -6,4 +6,7 @@ const router = express.Router();
 
 router.get("/:uid", notificationsController.getNotificationsByUserId);
 
+router.patch("/", notificationsController.markNotificationsAsRead);
+router.delete("/", notificationsController.dismissNotification);
+
 module.exports = router;
