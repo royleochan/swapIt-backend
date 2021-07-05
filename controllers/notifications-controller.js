@@ -15,6 +15,7 @@ const getNotificationsByUserId = async (req, res, next) => {
           path: "creator productId matchedProductId",
           select: "profilePic imageUrl",
         },
+        options: { sort: { createdAt: -1 } },
       })
       .select("notifications");
   } catch (err) {

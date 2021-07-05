@@ -269,7 +269,9 @@ const followUser = async (req, res, next) => {
   let loggedInUser;
   let targetUser;
   try {
-    loggedInUser = await User.findById(loggedInUserId).populate(notifications);
+    loggedInUser = await User.findById(loggedInUserId).populate(
+      "notifications"
+    );
     targetUser = await User.findById(targetUserId);
   } catch (err) {
     const error = new HttpError(

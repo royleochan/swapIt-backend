@@ -80,7 +80,10 @@ const getAllFollowingProducts = async (req, res, next) => {
     followingProducts = following.following
       .map((user) => user.products)
       .flat()
-      .reverse();
+      .sort((a, b) => {
+        console.log(b.createdAt - a.createdAt);
+        return b.createdAt - a.createdAt;
+      });
   } catch (err) {
     const error = new HttpError(
       "Fetching products failed, please try again later.",

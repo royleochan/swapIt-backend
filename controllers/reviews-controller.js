@@ -45,6 +45,7 @@ const getReviewsByUserId = async (req, res, next) => {
           path: "creator",
           select: "profilePic name",
         },
+        options: { sort: { createdAt: -1 } },
       })
       .select("reviews");
   } catch (err) {
