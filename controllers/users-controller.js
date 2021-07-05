@@ -179,7 +179,9 @@ const login = async (req, res, next) => {
   let existingUser;
 
   try {
-    existingUser = await User.findOne({ username: username });
+    existingUser = await User.findOne({ username: username }).populate(
+      "notifications"
+    );
   } catch (err) {
     const error = new HttpError(
       "Logging in failed, please try again later.",
@@ -232,7 +234,7 @@ const updateUser = async (req, res, next) => {
 
   let user;
   try {
-    user = await User.findById(userId);
+    user = await User.findById(userId).populate("notifications");
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not find a user.",
@@ -267,7 +269,7 @@ const followUser = async (req, res, next) => {
   let loggedInUser;
   let targetUser;
   try {
-    loggedInUser = await User.findById(loggedInUserId);
+    loggedInUser = await User.findById(loggedInUserId).populate(notifications);
     targetUser = await User.findById(targetUserId);
   } catch (err) {
     const error = new HttpError(
@@ -325,7 +327,9 @@ const unfollowUser = async (req, res, next) => {
   let loggedInUser;
   let targetUser;
   try {
-    loggedInUser = await User.findById(loggedInUserId);
+    loggedInUser = await User.findById(loggedInUserId).populate(
+      "notifications"
+    );
     targetUser = await User.findById(targetUserId);
   } catch (err) {
     const error = new HttpError(
@@ -360,7 +364,7 @@ const updatePushToken = async (req, res, next) => {
 
   let user;
   try {
-    user = await User.findById(userId).populate("products");
+    user = await User.findById(userId).populate("notifications");
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not find a user.",
