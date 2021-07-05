@@ -4,7 +4,7 @@ This repository contains the code for the backend server which the SwapIt fronte
 
 ## Installation
 
-Ensure you have [node](!https://nodejs.org/en/download/) installed together with npm.
+Ensure you have [node](https://nodejs.org/en/download/) installed together with npm.
 
 ## Usage
 
