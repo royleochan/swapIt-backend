@@ -9,6 +9,9 @@ router.get("/:uid", notificationsController.getNotificationsByUserId);
 
 router.use(checkAuth);
 router.patch("/", notificationsController.markNotificationsAsRead);
-router.delete("/", notificationsController.dismissNotification);
+router.delete(
+  "/:userId/:notificationId",
+  notificationsController.dismissNotification
+);
 
 module.exports = router;

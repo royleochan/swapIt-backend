@@ -61,7 +61,7 @@ const markNotificationsAsRead = async (req, res, next) => {
 };
 
 const dismissNotification = async (req, res, next) => {
-  const { notificationId, userId } = req.body;
+  const { notificationId, userId } = req.params;
 
   let user;
   try {
