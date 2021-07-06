@@ -29,7 +29,7 @@ const getUserById = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const user = await User.findById(uid).populate("products notifications");
+    const user = await User.findById(uid).populate("products");
     res.json({ user: user.toObject({ getters: true }) });
   } catch (err) {
     const error = new HttpError("Could not find user for this user id", 404);
@@ -179,9 +179,7 @@ const login = async (req, res, next) => {
   let existingUser;
 
   try {
-    existingUser = await User.findOne({ username: username }).populate(
-      "notifications"
-    );
+    existingUser = await User.findOne({ username: username });
   } catch (err) {
     const error = new HttpError(
       "Logging in failed, please try again later.",
@@ -234,7 +232,7 @@ const updateUser = async (req, res, next) => {
 
   let user;
   try {
-    user = await User.findById(userId).populate("notifications");
+    user = await User.findById(userId);
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not find a user.",
@@ -269,9 +267,7 @@ const followUser = async (req, res, next) => {
   let loggedInUser;
   let targetUser;
   try {
-    loggedInUser = await User.findById(loggedInUserId).populate(
-      "notifications"
-    );
+    loggedInUser = await User.findById(loggedInUserId);
     targetUser = await User.findById(targetUserId);
   } catch (err) {
     const error = new HttpError(
@@ -329,9 +325,7 @@ const unfollowUser = async (req, res, next) => {
   let loggedInUser;
   let targetUser;
   try {
-    loggedInUser = await User.findById(loggedInUserId).populate(
-      "notifications"
-    );
+    loggedInUser = await User.findById(loggedInUserId);
     targetUser = await User.findById(targetUserId);
   } catch (err) {
     const error = new HttpError(
@@ -366,7 +360,7 @@ const updatePushToken = async (req, res, next) => {
 
   let user;
   try {
-    user = await User.findById(userId).populate("notifications");
+    user = await User.findById(userId).populate("products");
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not find a user.",
