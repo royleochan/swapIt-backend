@@ -29,7 +29,7 @@ const getUserById = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const user = await User.findById(uid).populate("products");
+    const user = await User.findById(uid).populate("products notifications");
     res.json({ user: user.toObject({ getters: true }) });
   } catch (err) {
     const error = new HttpError("Could not find user for this user id", 404);
