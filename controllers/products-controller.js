@@ -81,7 +81,6 @@ const getAllFollowingProducts = async (req, res, next) => {
       .map((user) => user.products)
       .flat()
       .sort((a, b) => {
-        console.log(b.createdAt - a.createdAt);
         return b.createdAt - a.createdAt;
       });
   } catch (err) {
