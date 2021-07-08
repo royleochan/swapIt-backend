@@ -41,10 +41,10 @@ const getFollowingUsers = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const users = await User.findById(uid, "following")
+    const result = await User.findById(uid, "following username")
       .populate("following")
       .map((user) => user.toObject({ getters: true }));
-    res.json({ users });
+    res.json({ result });
   } catch (err) {
     const error = new HttpError("Could not find following", 404);
     return next(error);
@@ -55,10 +55,10 @@ const getFollowersUsers = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const users = await User.findById(uid, "followers")
+    const result = await User.findById(uid, "followers username")
       .populate("followers")
       .map((user) => user.toObject({ getters: true }));
-    res.json({ users });
+    res.json({ result });
   } catch (err) {
     const error = new HttpError("Could not find followers", 404);
     return next(error);

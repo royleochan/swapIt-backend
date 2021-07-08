@@ -47,7 +47,7 @@ const getReviewsByUserId = async (req, res, next) => {
         },
         options: { sort: { createdAt: -1 } },
       })
-      .select("reviews");
+      .select("reviews reviewRating");
   } catch (err) {
     const error = new HttpError(
       "Fetching reviews failed, please try again later",
