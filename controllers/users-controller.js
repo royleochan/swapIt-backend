@@ -41,7 +41,7 @@ const getFollowingUsers = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const result = await User.findById(uid, "following username")
+    const result = await User.findById(uid, "following")
       .populate("following")
       .map((user) => user.toObject({ getters: true }));
     res.json({ result });
@@ -55,7 +55,7 @@ const getFollowersUsers = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const result = await User.findById(uid, "followers username")
+    const result = await User.findById(uid, "followers")
       .populate("followers")
       .map((user) => user.toObject({ getters: true }));
     res.json({ result });
@@ -311,7 +311,7 @@ const followUser = async (req, res, next) => {
       return next(error);
     }
 
-    res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
+    res.status(200).json({ followed: targetUser.toObject({ getters: true }) });
   } else {
     const error = new HttpError("Already followed user", 400);
     return next(error);
@@ -351,7 +351,7 @@ const unfollowUser = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(200).json({ user: loggedInUser.toObject({ getters: true }) });
+  res.status(200).json({ unfollowed: targetUser.toObject({ getters: true }) });
 };
 
 const updatePushToken = async (req, res, next) => {
