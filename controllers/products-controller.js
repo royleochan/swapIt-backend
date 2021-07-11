@@ -394,7 +394,8 @@ const likeProduct = async (req, res, next) => {
           });
           await matchedItems[i].save({ session: sess });
         }
-      } catch {
+      } catch (err) {
+        console.log(err);
         const error = new HttpError(
           "Something went wrong, could not successfully save matches.",
           500
@@ -422,8 +423,9 @@ const likeProduct = async (req, res, next) => {
     await notification.save({ session: sess });
     creator.notifications.push(notification._id);
 
-    // Send Notification(s) For Matches
+    // Send Notification(s) For Matches: both ways
     for (let i = 0; i < matchedItems.length; i++) {
+      // To other user
       await sendPushNotification(
         pushToken,
         "New Match",
@@ -440,6 +442,24 @@ const likeProduct = async (req, res, next) => {
       });
       await notification.save({ session: sess });
       creator.notifications.push(notification._id);
+
+      // To ownself
+      await sendPushNotification(
+        user.pushToken,
+        "New Match",
+        `${product.title} matched with your ${matchedItems[i].title}`
+      );
+      notification = new Notification({
+        creator: creator._id,
+        targetUser: userId,
+        productId: matchedItems[i]._id,
+        matchedProductId: product._id,
+        description: `${product.title} matched with your ${matchedItems[i].title}`,
+        type: "MATCH",
+        isRead: false,
+      });
+      await notification.save({ session: sess });
+      user.notifications.push(notification._id);
     }
 
     await creator.save({ session: sess });
