@@ -14,13 +14,16 @@ const getProductById = async (req, res, next) => {
 
   try {
     const product = await Product.findById(pid)
-      .populate("creator")
       .populate({
-        path: "matches",
+        path: "matches creator",
+        select: "match product username",
         populate: {
           path: "product match",
+          select:
+            "-likes -matches -category -description -createdAt -updatedAt",
           populate: {
             path: "creator",
+            select: "username",
           },
         },
       });
@@ -29,6 +32,7 @@ const getProductById = async (req, res, next) => {
       product: product.toObject({ getters: true }),
     });
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Could not find product for product id", 404);
     return next(error);
   }
@@ -44,6 +48,7 @@ const getProductsByUserId = async (req, res, next) => {
       populate: { path: "creator" },
     });
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Fetching products failed, please try again later",
       500
@@ -84,6 +89,7 @@ const getAllFollowingProducts = async (req, res, next) => {
         return b.createdAt - a.createdAt;
       });
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Fetching products failed, please try again later.",
       500
@@ -112,6 +118,7 @@ const getCategoryProducts = async (req, res, next) => {
       category: filterCategory,
     }).populate("creator");
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Fetching products failed, please try again later.",
       500
@@ -137,6 +144,7 @@ const searchForProducts = async (req, res, next) => {
   try {
     aggCursor = await Product.aggregate(productPipeline);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Fetching products failed, please try again later",
       500
@@ -191,6 +199,7 @@ const createProduct = async (req, res, next) => {
   try {
     user = await User.findById(creator);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Creating product failed, please try again.",
       500
@@ -211,6 +220,7 @@ const createProduct = async (req, res, next) => {
     await user.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Failed to create product, please try again.",
       500
@@ -229,6 +239,7 @@ const updateProduct = async (req, res, next) => {
   try {
     product = await Product.findById(productId);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not find the product.",
       500
@@ -244,6 +255,7 @@ const updateProduct = async (req, res, next) => {
   try {
     await product.save();
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not update the product.",
       500
@@ -261,6 +273,7 @@ const deleteProduct = async (req, res, next) => {
   try {
     product = await Product.findById(productId).populate("creator");
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not delete product.",
       500
@@ -281,6 +294,7 @@ const deleteProduct = async (req, res, next) => {
     await product.creator.save({ session: sess });
     await sess.commitTransaction();
   } catch {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not delete product.",
       500
@@ -304,6 +318,7 @@ const likeProduct = async (req, res, next) => {
     try {
       product = await Product.findById(productId).populate("creator");
     } catch (err) {
+      console.log(err);
       const error = new HttpError(
         "Something went wrong, could not find product.",
         500
@@ -321,6 +336,7 @@ const likeProduct = async (req, res, next) => {
     try {
       user = await User.findById(userId);
     } catch (err) {
+      console.log(err);
       const error = new HttpError(
         "Fetching user failed, please try again later",
         500
@@ -352,6 +368,7 @@ const likeProduct = async (req, res, next) => {
         title: 1,
       });
     } catch (err) {
+      console.log(err);
       const error = new HttpError(
         "Fetching user failed, please try again later",
         500
@@ -395,6 +412,7 @@ const likeProduct = async (req, res, next) => {
           await matchedItems[i].save({ session: sess });
         }
       } catch {
+        console.log(err);
         const error = new HttpError(
           "Something went wrong, could not successfully save matches.",
           500
@@ -496,6 +514,7 @@ const unlikeProduct = async (req, res, next) => {
       );
       product.matches = newMatchedProductsMatches;
     } catch (err) {
+      console.log(err);
       const error = new HttpError("Fetching product failed", 500);
       return next(error);
     }
@@ -524,6 +543,7 @@ const unlikeProduct = async (req, res, next) => {
         try {
           await user.products[i].save();
         } catch (err) {
+          console.log(err);
           const error = new HttpError(
             "Could not unmatch item, please try again later",
             500
@@ -532,6 +552,7 @@ const unlikeProduct = async (req, res, next) => {
         }
       }
     } catch (err) {
+      console.log(err);
       const error = new HttpError(
         "Fetching user failed, please try again later",
         500
@@ -548,6 +569,7 @@ const unlikeProduct = async (req, res, next) => {
       await product.save();
       await user.save();
     } catch (err) {
+      console.log(err);
       const error = new HttpError(
         "Could not unlike item, please try again later",
         500
@@ -561,6 +583,7 @@ const unlikeProduct = async (req, res, next) => {
     });
     await sess.commitTransaction();
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Something went wrong.", 500);
     return next(error);
   }
@@ -573,6 +596,7 @@ const getLikedProducts = async (req, res, next) => {
   try {
     userWithLikes = await User.findById(userId).populate("likes");
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Fetching liked products failed, please try again later",
       500

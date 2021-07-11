@@ -17,6 +17,7 @@ const getLikedUsers = async (req, res, next) => {
     const users = await Product.findById(pid, "likes");
     res.json({ users });
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Could not find users who like the product",
       404
@@ -29,9 +30,12 @@ const getUserById = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const user = await User.findById(uid).populate("products");
+    const user = await User.findById(uid)
+      .select("-password")
+      .populate("products");
     res.json({ user: user.toObject({ getters: true }) });
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Could not find user for this user id", 404);
     return next(error);
   }
@@ -42,10 +46,14 @@ const getFollowingUsers = async (req, res, next) => {
 
   try {
     const result = await User.findById(uid, "following")
-      .populate("following")
+      .populate({
+        path: "following",
+        select: "username name profilePic",
+      })
       .map((user) => user.toObject({ getters: true }));
     res.json({ result });
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Could not find following", 404);
     return next(error);
   }
@@ -56,10 +64,14 @@ const getFollowersUsers = async (req, res, next) => {
 
   try {
     const result = await User.findById(uid, "followers")
-      .populate("followers")
+      .populate({
+        path: "followers",
+        select: "username name profilePic",
+      })
       .map((user) => user.toObject({ getters: true }));
     res.json({ result });
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Could not find followers", 404);
     return next(error);
   }
@@ -89,6 +101,7 @@ const searchForUsers = async (req, res, next) => {
       }),
     });
   } catch (err) {
+    console.log(err);
     const error = new HttpError("No users found", 500);
     return next(error);
   }
@@ -102,8 +115,15 @@ const signup = async (req, res, next) => {
     );
   }
 
-  const { name, email, password, username, profilePic, description, location } =
-    req.body;
+  const {
+    name,
+    email,
+    password,
+    username,
+    profilePic,
+    description,
+    location,
+  } = req.body;
 
   let existingUser;
   let existingUsername;
@@ -111,6 +131,7 @@ const signup = async (req, res, next) => {
     existingUser = await User.findOne({ email: email });
     existingUsername = await User.findOne({ username: username });
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Signing up failed, please try again later.",
       500
@@ -130,6 +151,7 @@ const signup = async (req, res, next) => {
   try {
     hashedPassword = await bcrypt.hash(password, 12);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Could not create password, please try again.",
       500
@@ -156,6 +178,7 @@ const signup = async (req, res, next) => {
   try {
     await createdUser.save();
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Signing up failed, please try again", 500);
     return next(error);
   }
@@ -164,6 +187,7 @@ const signup = async (req, res, next) => {
   try {
     token = jwt.sign({ user: createdUser }, `${process.env.SECRET_KEY}`);
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Signing up failed, please try again", 500);
     return next(error);
   }
@@ -181,6 +205,7 @@ const login = async (req, res, next) => {
   try {
     existingUser = await User.findOne({ username: username });
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Logging in failed, please try again later.",
       500
@@ -197,6 +222,7 @@ const login = async (req, res, next) => {
   try {
     isValidPassword = await bcrypt.compare(password, existingUser.password);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Could not log you in, please check your credentials and try again.",
       500
@@ -213,6 +239,7 @@ const login = async (req, res, next) => {
   try {
     token = jwt.sign({ user: existingUser }, `${process.env.SECRET_KEY}`);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Logging in failed, please try again later.",
       500
@@ -234,6 +261,7 @@ const updateUser = async (req, res, next) => {
   try {
     user = await User.findById(userId);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not find a user.",
       500
@@ -250,6 +278,7 @@ const updateUser = async (req, res, next) => {
   try {
     await user.save();
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not update a user.",
       500
@@ -270,6 +299,7 @@ const followUser = async (req, res, next) => {
     loggedInUser = await User.findById(loggedInUserId);
     targetUser = await User.findById(targetUserId);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not find users.",
       500
@@ -304,6 +334,7 @@ const followUser = async (req, res, next) => {
       await targetUser.save();
       await sess.commitTransaction();
     } catch (err) {
+      console.log(err);
       const error = new HttpError(
         "Something went wrong, could not follow user.",
         500
@@ -328,6 +359,7 @@ const unfollowUser = async (req, res, next) => {
     loggedInUser = await User.findById(loggedInUserId);
     targetUser = await User.findById(targetUserId);
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not find users.",
       500
@@ -344,6 +376,7 @@ const unfollowUser = async (req, res, next) => {
     await targetUser.save();
     await sess.commitTransaction();
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not unfollow user.",
       500
@@ -362,6 +395,7 @@ const updatePushToken = async (req, res, next) => {
   try {
     user = await User.findById(userId).populate("products");
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not find a user.",
       500
