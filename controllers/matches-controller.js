@@ -1,15 +1,20 @@
 const mongoose = require("mongoose");
 
+const sendPushNotification = require("../services/pushNotification");
 const HttpError = require("../models/http-error");
+const Notification = require("../models/notification");
 const Match = require("../models/match");
 const Product = require("../models/product");
 
 const sendRequest = async (req, res, next) => {
   const { mid } = req.params;
-  const { pid } = req.body;
+  const { pid } = req.body; // pid is productId of user's own product (user sending the request)
 
   try {
-    const matches = await Product.findById(pid, "matches").populate({
+    const matches = await Product.findById(
+      pid,
+      "matches title creator"
+    ).populate({
       path: "matches",
       populate: {
         path: "match",
@@ -61,11 +66,38 @@ const sendRequest = async (req, res, next) => {
     pid.toString() === matchToUpdate.productOneId.toString()
       ? (matchToUpdate.productOneIsRequested = true)
       : (matchToUpdate.productTwoIsRequested = true);
+    const otherProduct = await Product.findById(
+      pid.toString() === matchToUpdate.productOneId.toString()
+        ? matchToUpdate.productTwoId
+        : matchToUpdate.productOneId,
+      "title creator"
+    ).populate("creator");
+
+    let notification = new Notification({
+      creator: matches.creator,
+      targetUser: otherProduct.creator._id,
+      productId: otherProduct._id,
+      matchedProductId: pid,
+      description: `Your ${otherProduct.title} has a new swap request from ${matches.title}`,
+      type: "REQUEST",
+      isRead: false,
+    });
+    await notification.save({ session: sess });
+    otherProduct.creator.notifications.push(notification._id);
+    await otherProduct.creator.save({ session: sess });
     await matchToUpdate.save({ session: sess });
     await sess.commitTransaction();
 
+    // Send Notification:
+    await sendPushNotification(
+      otherProduct.creator.pushToken,
+      "New Swap Request",
+      `Your ${otherProduct.title} has a new swap request from ${matches.title}`
+    );
+
     res.status(200).json(matchToUpdate.toObject({ getters: true }));
   } catch (err) {
+    console.log(err);
     const error = new HttpError("Unknown error occured. Try again later.", 500);
     return next(error);
   }
@@ -73,11 +105,14 @@ const sendRequest = async (req, res, next) => {
 
 const acceptRequest = async (req, res, next) => {
   const { mid } = req.params;
-  const { pid } = req.body;
+  const { pid } = req.body; // pid is productId of user's own product (user accepting the request)
 
   try {
-    const matches = await Product.findById(pid, "matches").populate({
-      path: "matches",
+    const matches = await Product.findById(
+      pid,
+      "matches creator title"
+    ).populate({
+      path: "matches creator",
       populate: {
         path: "match",
       },
@@ -129,8 +164,54 @@ const acceptRequest = async (req, res, next) => {
     sess.startTransaction();
     const matchToUpdate = await Match.findById(mid);
     matchToUpdate.isConfirmed = true;
+    const otherProduct = await Product.findById(
+      pid.toString() === matchToUpdate.productOneId.toString()
+        ? matchToUpdate.productTwoId
+        : matchToUpdate.productOneId,
+      "title creator"
+    ).populate("creator");
     await matchToUpdate.save({ session: sess });
+
+    // Create Notification For Both Users:
+    let notification = new Notification({
+      creator: matches.creator._id,
+      targetUser: otherProduct.creator._id,
+      productId: otherProduct._id,
+      matchedProductId: pid,
+      description: `Your ${otherProduct.title} has been swapped with ${matches.title}`,
+      type: "SWAPPED",
+      isRead: false,
+    });
+    await notification.save({ session: sess });
+    otherProduct.creator.notifications.push(notification._id);
+    await otherProduct.creator.save({ session: sess });
+
+    notification = new Notification({
+      creator: otherProduct.creator._id,
+      targetUser: matches.creator._id,
+      productId: pid,
+      matchedProductId: otherProduct._id,
+      description: `Your ${matches.title} has been swapped with ${otherProduct.title}`,
+      type: "SWAP",
+      isRead: false,
+    });
+    await notification.save({ session: sess });
+    matches.creator.notifications.push(notification._id);
+    await matches.creator.save({ session: sess });
+
     await sess.commitTransaction();
+
+    // Send Notification To Both Users:
+    await sendPushNotification(
+      otherProduct.creator.pushToken,
+      "Swapped Confirmed!",
+      `Your ${otherProduct.title} has been swapped with ${matches.title}`
+    );
+    await sendPushNotification(
+      matches.creator.pushToken,
+      "Swapped Confirmed!",
+      `Your ${matches.title} has been swapped with ${otherProduct.title} `
+    );
 
     res.status(200).json(matchToUpdate.toObject({ getters: true }));
   } catch (err) {
