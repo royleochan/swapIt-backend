@@ -449,7 +449,6 @@ const likeProduct = async (req, res, next) => {
 
     res.status(200).json({
       message: "Liked Product",
-      user: user.toObject({ getters: true }),
       product: product.toObject({ getters: true }),
     });
   } catch (err) {
@@ -558,7 +557,6 @@ const unlikeProduct = async (req, res, next) => {
 
     res.status(200).json({
       message: "Unliked Product",
-      user: user.toObject({ getters: true }),
       product: product.toObject({ getters: true }),
     });
     await sess.commitTransaction();
