@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const socketio = require("socket.io");
+const morgan = require("morgan");
 
 const s3GenerateUploadURL = require("./services/s3");
 const HttpError = require("./models/http-error");
@@ -25,6 +26,9 @@ const io = socketio(server);
 const chatSocket = io.of("/chatSocket");
 require("./services/chatSocket")(chatSocket);
 
+// setup logging
+app.use(morgan("dev"));
+
 // connect routes
 app.use(express.json());
 app.use("/api/products", productsRoutes);
@@ -34,9 +38,17 @@ app.use("/api/chats", chatsRoutes);
 app.use("/api/matches", matchesRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/reports", reportsRoutes);
+
+// get s3 image upload url
 app.get("/api/s3Url", async (req, res) => {
   const url = await s3GenerateUploadURL();
   res.send({ url });
+});
+
+// log errors
+app.use((error, req, res, next) => {
+  console.error(error);
+  return next(error);
 });
 
 // error handling
@@ -63,5 +75,5 @@ mongoose
     }
   )
   .catch((err) => {
-    console.log(err);
+    console.error(err);
   });
