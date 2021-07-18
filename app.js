@@ -21,6 +21,9 @@ const server = app.listen(port, () => {
   console.log("Server listening on port: %s", port);
 });
 
+// set timeout for requests to be 6 seconds
+server.setTimeout(6000);
+
 // start chat socket
 const io = socketio(server);
 const chatSocket = io.of("/chatSocket");
@@ -28,6 +31,12 @@ require("./services/chatSocket")(chatSocket);
 
 // setup logging
 app.use(morgan("dev"));
+
+// log errors
+app.use((error, req, res, next) => {
+  console.error(error);
+  return next(error);
+});
 
 // connect routes
 app.use(express.json());
@@ -39,16 +48,10 @@ app.use("/api/matches", matchesRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/reports", reportsRoutes);
 
-// get s3 image upload url
+// route to handle retrieval of s3 image upload url
 app.get("/api/s3Url", async (req, res) => {
   const url = await s3GenerateUploadURL();
   res.send({ url });
-});
-
-// log errors
-app.use((error, req, res, next) => {
-  console.error(error);
-  return next(error);
 });
 
 // error handling
@@ -58,7 +61,7 @@ app.use((req, res, next) => {
 });
 
 app.use((error, req, res, next) => {
-  if (res.headerSent) {
+  if (res.headersSent) {
     return next(error);
   }
   res.status(error.code || 500);
