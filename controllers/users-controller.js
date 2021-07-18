@@ -115,15 +115,8 @@ const signup = async (req, res, next) => {
     );
   }
 
-  const {
-    name,
-    email,
-    password,
-    username,
-    profilePic,
-    description,
-    location,
-  } = req.body;
+  const { name, email, password, username, profilePic, description, location } =
+    req.body;
 
   let existingUser;
   let existingUsername;
@@ -419,6 +412,96 @@ const updatePushToken = async (req, res, next) => {
   res.status(200).json({ user: user.toObject({ getters: true }) });
 };
 
+/**
+ * Controller to update a user's password
+ *
+ * @param {
+ *  currentPassword: string,
+ *  newPassword: string,
+ *  newPasswordConfirmation: string
+ * } req.body
+ * @param {
+ *  userId: string
+ * } req.params.uid
+ *
+ * @returns response 200 if request succeeds with a message indicating success
+ * @throws 422 if passwords do not match or current password is wrong
+ * @throws 500 if any unexpected errors occur
+ */
+const updatePassword = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(
+      new HttpError("Invalid inputs passed, please check your data", 422)
+    );
+  }
+
+  const { currentPassword, newPassword, newPasswordConfirmation } = req.body;
+  const userId = req.params.uid;
+
+  if (newPassword !== newPasswordConfirmation) {
+    const error = new HttpError("New passwords do not match.", 422);
+    return next(error);
+  }
+
+  let user;
+  try {
+    user = await User.findById(userId);
+  } catch (err) {
+    console.log(err);
+    const error = new HttpError(
+      "Something went wrong, could not find a user.",
+      500
+    );
+    return next(error);
+  }
+
+  try {
+    const isPasswordCorrect = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!isPasswordCorrect) {
+      const error = new HttpError(
+        "Current password is wrong, please try again.",
+        422
+      );
+      return next(error);
+    }
+  } catch (err) {
+    const error = new HttpError("Something went wrong, please try again.", 500);
+    return next(error);
+  }
+
+  let hashedPassword;
+  try {
+    hashedPassword = await bcrypt.hash(newPassword, 12);
+  } catch (err) {
+    console.log(err);
+    const error = new HttpError(
+      "Could not create password, please try again.",
+      500
+    );
+    return next(error);
+  }
+
+  user.password = hashedPassword;
+
+  try {
+    await user.save();
+  } catch (err) {
+    console.log(err);
+    const error = new HttpError(
+      "Something went wrong, could not update password.",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ message: "Password successfully changed." });
+};
+
 exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
 exports.getFollowingUsers = getFollowingUsers;
@@ -430,3 +513,4 @@ exports.updateUser = updateUser;
 exports.followUser = followUser;
 exports.unfollowUser = unfollowUser;
 exports.updatePushToken = updatePushToken;
+exports.updatePassword = updatePassword;

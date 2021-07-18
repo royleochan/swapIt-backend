@@ -27,10 +27,15 @@ router.post(
 router.post("/login", usersController.login);
 
 // patch routes
+router.use(checkAuth);
 router.patch("/follow/:uid", usersController.followUser);
 router.patch("/unfollow/:uid", usersController.unfollowUser);
-router.use(checkAuth);
 router.patch("/:uid", usersController.updateUser);
 router.patch("/pushToken/:uid", usersController.updatePushToken);
+router.patch(
+  "/password/:uid",
+  [check("newPassword").isLength({ min: 8 })],
+  usersController.updatePassword
+);
 
 module.exports = router;
