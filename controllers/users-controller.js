@@ -132,9 +132,17 @@ const signup = async (req, res, next) => {
     return next(error);
   }
 
-  if (existingUser || existingUsername) {
+  if (existingUser) {
     const error = new HttpError(
-      "User already exists, please try logging in",
+      "Email already has an account, try logging in.",
+      422
+    );
+    return next(error);
+  }
+
+  if (existingUsername) {
+    const error = new HttpError(
+      "Username already exists, try logging in or signup using a different username",
       422
     );
     return next(error);
