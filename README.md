@@ -38,6 +38,10 @@ npm install
 npm run dev
 ```
 
+## Development Tools
+
+1. [MongoDB Compass](https://www.mongodb.com/try/download/compass)
+
 ## Deployment
 
 ### Development 
