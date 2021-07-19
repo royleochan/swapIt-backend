@@ -9,7 +9,11 @@ const notificationSchema = new Schema(
     productId: { type: mongoose.Types.ObjectId, ref: "Product" },
     matchedProductId: { type: mongoose.Types.ObjectId, ref: "Product" }, // refers to OTHER PRODUCT ID, not necessarily matched yet, can be requested
     description: { type: String, required: true },
-    type: { type: String, required: true },
+    type: {
+      type: String,
+      required: true,
+      enum: ["LIKE", "REQUEST", "SWAP", "MATCH", "REVIEW", "FOLLOW"],
+    },
     isRead: { type: Boolean, required: true, default: false },
   },
   { timestamps: true }

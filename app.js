@@ -73,8 +73,10 @@ mongoose
   .connect(
     `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.cqmho.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
     {
-      useNewUrlParser: true,
+      useFindAndModify: false,
       useUnifiedTopology: true,
+      useNewUrlParser: true,
+      useCreateIndex: true,
     }
   )
   .catch((err) => {
