@@ -153,7 +153,7 @@ const searchForProducts = async (req, res, next) => {
   const searchedProducts = [];
   aggCursor.forEach((product) => searchedProducts.push(product));
 
-  if (searchedProducts.length === 0) {
+  if (!searchedProducts) {
     const error = new HttpError("Could not find any products", 404);
     return next(error);
   }
