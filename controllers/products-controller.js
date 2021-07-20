@@ -13,20 +13,18 @@ const getProductById = async (req, res, next) => {
   const { pid } = req.params;
 
   try {
-    const product = await Product.findById(pid)
-      .populate({
-        path: "matches creator",
-        select: "match product username",
+    const product = await Product.findById(pid).populate({
+      path: "matches creator",
+      select: "match product username",
+      populate: {
+        path: "product match",
+        select: "-likes -matches -category -description -createdAt -updatedAt",
         populate: {
-          path: "product match",
-          select:
-            "-likes -matches -category -description -createdAt -updatedAt",
-          populate: {
-            path: "creator",
-            select: "username",
-          },
+          path: "creator",
+          select: "username",
         },
-      });
+      },
+    });
 
     res.json({
       product: product.toObject({ getters: true }),
@@ -126,7 +124,7 @@ const getCategoryProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (!productsByCategory || productsByCategory.length === 0) {
+  if (!productsByCategory) {
     const error = new HttpError("No products found in this category.", 404);
     return next(error);
   }
