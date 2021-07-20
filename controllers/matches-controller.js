@@ -179,7 +179,7 @@ const acceptRequest = async (req, res, next) => {
       productId: otherProduct._id,
       matchedProductId: pid,
       description: `Your ${otherProduct.title} has been swapped with ${matches.title}`,
-      type: "SWAPPED",
+      type: "SWAP",
       isRead: false,
     });
     await notification.save({ session: sess });
