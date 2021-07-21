@@ -1,5 +1,14 @@
 const express = require("express");
-const { check } = require("express-validator");
+
+const {
+  createUserValidationRules,
+} = require("../validations/create-user-validator");
+const {
+  updateUserValidationRules,
+} = require("../validations/update-user-validator");
+const {
+  updatePasswordValidationRules,
+} = require("../validations/update-password-validator");
 
 const usersController = require("../controllers/users-controller");
 const checkAuth = require("../middleware/check-auth");
@@ -14,27 +23,18 @@ router.get("/following/:uid", usersController.getFollowingUsers);
 router.get("/followers/:uid", usersController.getFollowersUsers);
 
 // post routes
-router.post(
-  "/signup",
-  [
-    check("name").not().isEmpty(),
-    check("email").normalizeEmail().isEmail(),
-    check("password").isLength({ min: 8 }),
-    check("username").isLength({ max: 15 }),
-  ],
-  usersController.signup
-);
+router.post("/signup", createUserValidationRules(), usersController.signup);
 router.post("/login", usersController.login);
 
 // patch routes
-router.use(checkAuth);
+// router.use(checkAuth);
 router.patch("/follow/:uid", usersController.followUser);
 router.patch("/unfollow/:uid", usersController.unfollowUser);
-router.patch("/:uid", usersController.updateUser);
+router.patch("/:uid", updateUserValidationRules(), usersController.updateUser);
 router.patch("/pushToken/:uid", usersController.updatePushToken);
 router.patch(
   "/password/:uid",
-  [check("newPassword").isLength({ min: 8 })],
+  updatePasswordValidationRules(),
   usersController.updatePassword
 );
 

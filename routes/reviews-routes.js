@@ -1,5 +1,8 @@
 const express = require("express");
-const { check } = require("express-validator");
+
+const {
+  createReviewValidationRules,
+} = require("../validations/reviews-validator");
 
 const reviewsControllers = require("../controllers/reviews-controller");
 
@@ -10,7 +13,7 @@ router.get("/:uid/:mid", reviewsControllers.getReviewByMatchId);
 
 router.post(
   "/",
-  [check("description").not().isEmpty()],
+  createReviewValidationRules(),
   reviewsControllers.createReview
 );
 

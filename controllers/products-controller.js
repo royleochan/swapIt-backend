@@ -230,6 +230,11 @@ const createProduct = async (req, res, next) => {
 };
 
 const updateProduct = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    throw new HttpError("Invalid inputs passed, please check your data", 422);
+  }
+  
   const { title, description, imageUrl, category } = req.body;
   const productId = req.params.pid;
 

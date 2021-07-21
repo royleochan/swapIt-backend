@@ -255,6 +255,13 @@ const login = async (req, res, next) => {
 };
 
 const updateUser = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(
+      new HttpError("Invalid inputs passed, please check your data", 422)
+    );
+  }
+
   const { name, username, profilePic, description, location } = req.body;
   const userId = req.params.uid;
 
@@ -433,7 +440,7 @@ const updatePushToken = async (req, res, next) => {
  * } req.params.uid
  *
  * @returns response 200 if request succeeds with a message indicating success
- * @throws 422 if passwords do not match or current password is wrong
+ * @throws 422 if passwords do not match or current password is wrong or new password is not strong enough
  * @throws 500 if any unexpected errors occur
  */
 const updatePassword = async (req, res, next) => {

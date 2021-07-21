@@ -1,8 +1,9 @@
 const express = require("express");
-const { check } = require("express-validator");
+
+const { productValidationRules } = require("../validations/products-validator");
 
 const productsControllers = require("../controllers/products-controller");
-// const checkAuth = require("../middleware/check-auth");
+const checkAuth = require("../middleware/check-auth");
 
 const router = express.Router();
 
@@ -16,17 +17,20 @@ router.get("/all/:uid", productsControllers.getAllFollowingProducts);
 
 router.get("/likedProducts/:uid", productsControllers.getLikedProducts);
 
-router.get("/category/:filterCategory", productsControllers.getCategoryProducts);
+router.get(
+  "/category/:filterCategory",
+  productsControllers.getCategoryProducts
+);
 
 // router.use(checkAuth);
 
-router.post(
-  "/",
-  [check("title").not().isEmpty(), check("description").not().isEmpty()],
-  productsControllers.createProduct
-);
+router.post("/", productValidationRules(), productsControllers.createProduct);
 
-router.patch("/:pid", productsControllers.updateProduct);
+router.patch(
+  "/:pid",
+  productValidationRules(),
+  productsControllers.updateProduct
+);
 
 router.patch("/like/:pid", productsControllers.likeProduct);
 

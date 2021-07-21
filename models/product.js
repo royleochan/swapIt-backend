@@ -17,7 +17,21 @@ const productSchema = new Schema(
         product: { type: mongoose.Types.ObjectId, ref: "Product" },
       },
     ],
-    category: { type: String, required: true },
+    category: {
+      type: String,
+      required: true,
+      enum: [
+        "Women's Tops",
+        "Women's Pants, Jeans & Shorts",
+        "Women's Skirts",
+        "Women's Rompers, Dresses & Jumpsuits",
+        "Women's Outerwear",
+        "Men's Tops",
+        "Men's Pants, Jeans & Shorts",
+        "Men's Outerwear",
+        "Others",
+      ],
+    },
   },
   { timestamps: true }
 );
