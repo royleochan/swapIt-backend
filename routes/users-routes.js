@@ -25,9 +25,10 @@ router.get("/followers/:uid", usersController.getFollowersUsers);
 // post routes
 router.post("/signup", createUserValidationRules(), usersController.signup);
 router.post("/login", usersController.login);
+router.post("/logout", usersController.logout);
 
 // patch routes
-// router.use(checkAuth);
+router.use(checkAuth);
 router.patch("/follow/:uid", usersController.followUser);
 router.patch("/unfollow/:uid", usersController.unfollowUser);
 router.patch("/:uid", updateUserValidationRules(), usersController.updateUser);

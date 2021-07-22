@@ -254,6 +254,21 @@ const login = async (req, res, next) => {
   });
 };
 
+const logout = async (req, res, next) => {
+  const { userId } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    user.pushToken = "";
+    await user.save();
+    res.status(200).json({ Message: "Logged out successfully" });
+  } catch (err) {
+    console.log(err);
+    const error = new HttpError("Logout failed, please try again later.", 500);
+    return next(error);
+  }
+};
+
 const updateUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -524,6 +539,7 @@ exports.getFollowersUsers = getFollowersUsers;
 exports.searchForUsers = searchForUsers;
 exports.signup = signup;
 exports.login = login;
+exports.logout = logout;
 exports.updateUser = updateUser;
 exports.followUser = followUser;
 exports.unfollowUser = unfollowUser;
