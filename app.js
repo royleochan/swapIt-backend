@@ -2,21 +2,30 @@ const express = require("express");
 const mongoose = require("mongoose");
 const socketio = require("socket.io");
 const morgan = require("morgan");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("./swagger.json");
+const swaggerJsdoc = require("swagger-jsdoc");
 
-const s3GenerateUploadURL = require("./services/s3");
-const HttpError = require("./models/http-error");
+const s3GenerateUploadURL = require("./src/services/s3");
+const HttpError = require("./src/models/http-error");
 
-const productsRoutes = require("./routes/products-routes");
-const usersRoutes = require("./routes/users-routes");
-const reviewsRoutes = require("./routes/reviews-routes");
-const chatsRoutes = require("./routes/chats-routes");
-const matchesRoutes = require("./routes/matches-routes");
-const notificationsRoutes = require("./routes/notifications-routes");
-const reportsRoutes = require("./routes/reports-routes");
+const productsRoutes = require("./src/routes/products-routes");
+const usersRoutes = require("./src/routes/users-routes");
+const reviewsRoutes = require("./src/routes/reviews-routes");
+const chatsRoutes = require("./src/routes/chats-routes");
+const matchesRoutes = require("./src/routes/matches-routes");
+const notificationsRoutes = require("./src/routes/notifications-routes");
+const reportsRoutes = require("./src/routes/reports-routes");
 
-// start server
+// create server
 const app = express();
 const port = process.env.PORT || 5000;
+
+// setup swagger
+const specs = swaggerJsdoc(swaggerDocument);
+app.use("/index", swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
+
+// start server
 const server = app.listen(port, () => {
   console.log("Server listening on port: %s", port);
 });
@@ -27,7 +36,7 @@ server.setTimeout(6000);
 // start chat socket
 const io = socketio(server);
 const chatSocket = io.of("/chatSocket");
-require("./services/chatSocket")(chatSocket);
+require("./src/services/chatSocket")(chatSocket);
 
 // setup logging
 app.use(morgan("dev"));
