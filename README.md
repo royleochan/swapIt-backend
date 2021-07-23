@@ -41,6 +41,13 @@ npm run dev
 ## Development Tools
 
 1. [MongoDB Compass](https://www.mongodb.com/try/download/compass)
+  
+2. SwaggerUI
+  
+- Swagger UI can be accessed through http://localhost:5000/index/ or appending index if a different port is used
+- For queries that require authentication, first send a post login request to obtain a valid jwt token. Then copy the jwt token into the authorize box on swagger. After which you will be successfully authenticated and can run all requests
+  
+![Imgur](https://i.imgur.com/SMEzUJr.png)
 
 ## Deployment
 
