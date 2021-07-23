@@ -18,10 +18,7 @@ const getLikedUsers = async (req, res, next) => {
     res.json({ users });
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Could not find users who like the product",
-      404
-    );
+    const error = new HttpError("Could not find product.", 404);
     return next(error);
   }
 };
@@ -36,7 +33,7 @@ const getUserById = async (req, res, next) => {
     res.json({ user: user.toObject({ getters: true }) });
   } catch (err) {
     console.log(err);
-    const error = new HttpError("Could not find user for this user id", 404);
+    const error = new HttpError("Could not find user.", 404);
     return next(error);
   }
 };
@@ -54,7 +51,10 @@ const getFollowingUsers = async (req, res, next) => {
     res.json({ result });
   } catch (err) {
     console.log(err);
-    const error = new HttpError("Could not find following", 404);
+    const error = new HttpError(
+      "Could not find user following information.",
+      404
+    );
     return next(error);
   }
 };
@@ -72,15 +72,18 @@ const getFollowersUsers = async (req, res, next) => {
     res.json({ result });
   } catch (err) {
     console.log(err);
-    const error = new HttpError("Could not find followers", 404);
+    const error = new HttpError(
+      "Could not find user followers information.",
+      404
+    );
     return next(error);
   }
 };
 
 const searchForUsers = async (req, res, next) => {
   const { query, uid } = req.params;
-  userPipeline.usernamePipeline[0].$search.autocomplete.query = query;
-  // atlas autocomplete search on username field
+  userPipeline.usernamePipeline[0].$search.autocomplete.query = query; // atlas autocomplete search on username field
+
   try {
     const aggCursor = await User.aggregate(userPipeline.usernamePipeline);
     const searchedUsers = [];
@@ -90,7 +93,7 @@ const searchForUsers = async (req, res, next) => {
       }
     });
 
-    if (searchedUsers.length === 0) {
+    if (!searchedUsers) {
       const error = new HttpError("Could not find any users", 404);
       return next(error);
     }
@@ -102,156 +105,112 @@ const searchForUsers = async (req, res, next) => {
     });
   } catch (err) {
     console.log(err);
-    const error = new HttpError("No users found", 500);
+    const error = new HttpError(
+      "Failed to search, please try again later.",
+      500
+    );
     return next(error);
   }
 };
 
 const signup = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
+  const inputErrors = validationResult(req);
+  if (!inputErrors.isEmpty()) {
     return next(
-      new HttpError("Invalid inputs passed, please check your data", 422)
+      new HttpError("Invalid inputs passed, please check your data.", 422)
     );
   }
 
   const { name, email, password, username, profilePic, description, location } =
     req.body;
 
-  let existingUser;
-  let existingUsername;
   try {
+    let existingUser;
+    let existingUsername;
     existingUser = await User.findOne({ email: email });
     existingUsername = await User.findOne({ username: username });
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Signing up failed, please try again later.",
-      500
-    );
-    return next(error);
-  }
 
-  if (existingUser) {
-    const error = new HttpError(
-      "Email already has an account, try logging in.",
-      422
-    );
-    return next(error);
-  }
+    if (existingUser) {
+      const error = new HttpError(
+        "Email already has an account, try logging in.",
+        422
+      );
+      return next(error);
+    }
 
-  if (existingUsername) {
-    const error = new HttpError(
-      "Username already exists, try logging in or signup using a different username",
-      422
-    );
-    return next(error);
-  }
+    if (existingUsername) {
+      const error = new HttpError(
+        "Username already exists, try logging in or signup using a different username.",
+        422
+      );
+      return next(error);
+    }
 
-  let hashedPassword;
-  try {
+    let hashedPassword;
     hashedPassword = await bcrypt.hash(password, 12);
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Could not create password, please try again.",
-      500
-    );
-    return next(error);
-  }
 
-  const createdUser = new User({
-    name,
-    username,
-    email,
-    ...(profilePic !== undefined && { profilePic }),
-    ...(description !== undefined && { description }),
-    ...(location !== undefined && { location }),
-    password: hashedPassword,
-    products: [],
-    likes: [],
-    followers: [],
-    following: [],
-    chats: [],
-    notifications: [],
-  });
-
-  try {
+    const createdUser = new User({
+      name,
+      username,
+      email,
+      ...(profilePic !== undefined && { profilePic }),
+      ...(description !== undefined && { description }),
+      ...(location !== undefined && { location }),
+      password: hashedPassword,
+      products: [],
+      likes: [],
+      followers: [],
+      following: [],
+      chats: [],
+      notifications: [],
+    });
     await createdUser.save();
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError("Signing up failed, please try again", 500);
-    return next(error);
-  }
 
-  // Generate jwt token
-  try {
+    // Generate jwt token
     token = jwt.sign({ user: createdUser }, `${process.env.SECRET_KEY}`);
+
+    res
+      .status(201)
+      .json({ user: createdUser.toObject({ getters: true }), token: token });
   } catch (err) {
     console.log(err);
-    const error = new HttpError("Signing up failed, please try again", 500);
+    const error = new HttpError("Sign up failed, please try again later.", 500);
     return next(error);
   }
-
-  res
-    .status(201)
-    .json({ user: createdUser.toObject({ getters: true }), token: token });
 };
 
 const login = async (req, res, next) => {
   const { username, password } = req.body;
 
-  let existingUser;
-
   try {
+    let existingUser;
     existingUser = await User.findOne({ username: username });
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Logging in failed, please try again later.",
-      500
-    );
-    return next(error);
-  }
 
-  if (!existingUser) {
-    const error = new HttpError("USERNAME_NOT_FOUND", 401);
-    return next(error);
-  }
+    if (!existingUser) {
+      const error = new HttpError("USERNAME_NOT_FOUND", 401);
+      return next(error);
+    }
 
-  let isValidPassword = false;
-  try {
+    let isValidPassword = false;
     isValidPassword = await bcrypt.compare(password, existingUser.password);
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Could not log you in, please check your credentials and try again.",
-      500
-    );
-    return next(error);
-  }
 
-  if (!isValidPassword) {
-    const error = new HttpError("INVALID_PASSWORD", 401);
-    return next(error);
-  }
+    if (!isValidPassword) {
+      const error = new HttpError("INVALID_PASSWORD", 401);
+      return next(error);
+    }
 
-  // Generate jwt token
-  try {
+    // Generate jwt token
     token = jwt.sign({ user: existingUser }, `${process.env.SECRET_KEY}`);
+
+    res.status(200).json({
+      user: existingUser.toObject({ getters: true }),
+      token: token,
+    });
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Logging in failed, please try again later.",
-      500
-    );
+    const error = new HttpError("Login failed, please try again later.", 500);
     return next(error);
   }
-
-  res.status(200).json({
-    user: existingUser.toObject({ getters: true }),
-    token: token,
-  });
 };
 
 const logout = async (req, res, next) => {
@@ -273,7 +232,7 @@ const updateUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(
-      new HttpError("Invalid inputs passed, please check your data", 422)
+      new HttpError("Invalid inputs passed, please check your data.", 422)
     );
   }
 
@@ -285,10 +244,7 @@ const updateUser = async (req, res, next) => {
     user = await User.findById(userId);
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not find a user.",
-      500
-    );
+    const error = new HttpError("Could not find user.", 404);
     return next(error);
   }
 
@@ -300,16 +256,16 @@ const updateUser = async (req, res, next) => {
 
   try {
     await user.save();
+
+    res.status(200).json({ user: user.toObject({ getters: true }) });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
-      "Something went wrong, could not update a user.",
+      "Failed to update user, please try again later.",
       500
     );
     return next(error);
   }
-
-  res.status(200).json({ user: user.toObject({ getters: true }) });
 };
 
 const followUser = async (req, res, next) => {
@@ -323,10 +279,12 @@ const followUser = async (req, res, next) => {
     targetUser = await User.findById(targetUserId);
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not find users.",
-      500
-    );
+    const error = new HttpError("Could not find user.", 404);
+    return next(error);
+  }
+
+  if (!loggedInUser || !targetUser) {
+    const error = new HttpError("Could not find user.", 404);
     return next(error);
   }
 
@@ -337,12 +295,6 @@ const followUser = async (req, res, next) => {
       loggedInUser.following.push(targetUserId);
       targetUser.followers.push(loggedInUserId);
 
-      // Send Notification
-      sendPushNotification(
-        targetUser.pushToken,
-        "New Follow",
-        `${loggedInUser.name} followed you`
-      );
       notification = new Notification({
         creator: loggedInUserId,
         targetUser: targetUserId,
@@ -365,6 +317,17 @@ const followUser = async (req, res, next) => {
       return next(error);
     }
 
+    // Try to send notification, can be allowed to fail
+    try {
+      sendPushNotification(
+        targetUser.pushToken,
+        "New Follow",
+        `${loggedInUser.name} followed you`
+      );
+    } catch (err) {
+      console.log(err.message);
+    }
+
     res.status(200).json({ followed: targetUser.toObject({ getters: true }) });
   } else {
     const error = new HttpError("Already followed user", 400);
@@ -383,10 +346,12 @@ const unfollowUser = async (req, res, next) => {
     targetUser = await User.findById(targetUserId);
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not find users.",
-      500
-    );
+    const error = new HttpError("Could not find user.", 404);
+    return next(error);
+  }
+
+  if (!loggedInUser || !targetUser) {
+    const error = new HttpError("Could not find user.", 404);
     return next(error);
   }
 
@@ -400,10 +365,7 @@ const unfollowUser = async (req, res, next) => {
     await sess.commitTransaction();
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not unfollow user.",
-      500
-    );
+    const error = new HttpError("Failed to unfollow user.", 500);
     return next(error);
   }
 
@@ -419,10 +381,7 @@ const updatePushToken = async (req, res, next) => {
     user = await User.findById(userId).populate("products");
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not find a user.",
-      500
-    );
+    const error = new HttpError("Could not find user.", 404);
     return next(error);
   }
 
@@ -430,34 +389,14 @@ const updatePushToken = async (req, res, next) => {
 
   try {
     await user.save();
+    res.status(200).json({ user: user.toObject({ getters: true }) });
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not update push token.",
-      500
-    );
+    const error = new HttpError("Failed to update push token.", 500);
     return next(error);
   }
-
-  res.status(200).json({ user: user.toObject({ getters: true }) });
 };
 
-/**
- * Controller to update a user's password
- *
- * @param {
- *  currentPassword: string,
- *  newPassword: string,
- *  newPasswordConfirmation: string
- * } req.body
- * @param {
- *  userId: string
- * } req.params.uid
- *
- * @returns response 200 if request succeeds with a message indicating success
- * @throws 422 if passwords do not match or current password is wrong or new password is not strong enough
- * @throws 500 if any unexpected errors occur
- */
 const updatePassword = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -479,10 +418,12 @@ const updatePassword = async (req, res, next) => {
     user = await User.findById(userId);
   } catch (err) {
     console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not find a user.",
-      500
-    );
+    const error = new HttpError("Could not find user.", 404);
+    return next(error);
+  }
+
+  if (!user) {
+    const error = new HttpError("Could not find user.", 404);
     return next(error);
   }
 
@@ -504,32 +445,17 @@ const updatePassword = async (req, res, next) => {
     return next(error);
   }
 
-  let hashedPassword;
   try {
+    let hashedPassword;
     hashedPassword = await bcrypt.hash(newPassword, 12);
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Could not create password, please try again.",
-      500
-    );
-    return next(error);
-  }
 
-  user.password = hashedPassword;
-
-  try {
+    user.password = hashedPassword;
     await user.save();
+    res.status(200).json({ message: "Password successfully changed." });
   } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not update password.",
-      500
-    );
+    const error = new HttpError("Failed to update password.", 500);
     return next(error);
   }
-
-  res.status(200).json({ message: "Password successfully changed." });
 };
 
 exports.getLikedUsers = getLikedUsers;

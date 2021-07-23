@@ -6,11 +6,6 @@ const updateUserValidationRules = () => {
       .trim()
       .isLength({ min: 1, max: 16 })
       .withMessage("Username must be between 1 and 16 characters"),
-    check("email")
-      .trim()
-      .isEmail()
-      .normalizeEmail()
-      .withMessage("Please enter a valid email"),
     check("name")
       .trim()
       .isLength({ min: 1, max: 20 })

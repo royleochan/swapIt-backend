@@ -7,7 +7,9 @@ const sendPushNotification = async (targetExpoPushToken, title, body) => {
   // Check that target push token is valid
   // Each push token looks like ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
   if (!Expo.isExpoPushToken(targetExpoPushToken)) {
-    console.error(`Push token ${pushToken} is not a valid Expo push token`);
+    const errMsg = `Push token ${pushToken} is not a valid Expo push token`;
+    console.error(errMsg);
+    throw Error(errMsg);
   }
 
   const chunks = expo.chunkPushNotifications([
