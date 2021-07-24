@@ -1,4 +1,5 @@
 const express = require("express");
+const checkAuth = require("../middleware/check-auth");
 
 const {
   createReviewValidationRules,
@@ -56,6 +57,11 @@ router.get("/:uid", reviewsControllers.getReviewsByUserId);
  *         description: A review
  */
 router.get("/:uid/:mid", reviewsControllers.getReviewByMatchId);
+
+// ---------------------------------------- //
+//         Authenticate Routes Below        //
+// ---------------------------------------- //
+router.use(checkAuth);
 
 // ----------------------------- //
 //          POST REQUESTS        //

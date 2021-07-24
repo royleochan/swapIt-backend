@@ -1,9 +1,8 @@
 const express = require("express");
-
+const checkAuth = require("../middleware/check-auth");
 const { productValidationRules } = require("../validations/products-validator");
 
 const productsControllers = require("../controllers/products-controller");
-const checkAuth = require("../middleware/check-auth");
 
 const router = express.Router();
 
@@ -22,7 +21,10 @@ router.get(
   productsControllers.getCategoryProducts
 );
 
-// router.use(checkAuth);
+// ---------------------------------------- //
+//         Authenticate Routes Below        //
+// ---------------------------------------- //
+router.use(checkAuth);
 
 router.post("/", productValidationRules(), productsControllers.createProduct);
 
