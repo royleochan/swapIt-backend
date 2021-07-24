@@ -144,7 +144,10 @@ const getLikedProducts = async (req, res, next) => {
 
   let userWithLikes;
   try {
-    userWithLikes = await User.findById(userId).populate("likes");
+    userWithLikes = await User.findById(userId).populate({
+      path: "likes",
+      populate: { path: "creator" },
+    });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
