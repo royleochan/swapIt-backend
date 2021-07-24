@@ -21,6 +21,11 @@ const sendRequest = async (req, res, next) => {
       },
     });
 
+    if (!matches) {
+      const error = new HttpError("Could not find matches", 404);
+      return next(error);
+    }
+
     const matchesArray = matches.matches;
 
     // check if already accepted another match (cannot)
@@ -88,12 +93,16 @@ const sendRequest = async (req, res, next) => {
     await matchToUpdate.save({ session: sess });
     await sess.commitTransaction();
 
-    // Send Notification:
-    await sendPushNotification(
-      otherProduct.creator.pushToken,
-      "New Swap Request",
-      `Your ${otherProduct.title} has a new swap request from ${matches.title}`
-    );
+    // Send Notification: can fail
+    try {
+      await sendPushNotification(
+        otherProduct.creator.pushToken,
+        "New Swap Request",
+        `Your ${otherProduct.title} has a new swap request from ${matches.title}`
+      );
+    } catch (err) {
+      console.log(err);
+    }
 
     res.status(200).json(matchToUpdate.toObject({ getters: true }));
   } catch (err) {
@@ -117,6 +126,11 @@ const acceptRequest = async (req, res, next) => {
         path: "match",
       },
     });
+
+    if (!matches) {
+      const error = new HttpError("Could not find matches", 404);
+      return next(error);
+    }
 
     const matchesArray = matches.matches;
     // check if already accepted match (cannot)
@@ -201,17 +215,21 @@ const acceptRequest = async (req, res, next) => {
 
     await sess.commitTransaction();
 
-    // Send Notification To Both Users:
-    await sendPushNotification(
-      otherProduct.creator.pushToken,
-      "Swapped Confirmed!",
-      `Your ${otherProduct.title} has been swapped with ${matches.title}`
-    );
-    await sendPushNotification(
-      matches.creator.pushToken,
-      "Swapped Confirmed!",
-      `Your ${matches.title} has been swapped with ${otherProduct.title} `
-    );
+    // Send Notification To Both Users: can fail
+    try {
+      await sendPushNotification(
+        otherProduct.creator.pushToken,
+        "Swapped Confirmed!",
+        `Your ${otherProduct.title} has been swapped with ${matches.title}`
+      );
+      await sendPushNotification(
+        matches.creator.pushToken,
+        "Swapped Confirmed!",
+        `Your ${matches.title} has been swapped with ${otherProduct.title} `
+      );
+    } catch (err) {
+      console.log(err);
+    }
 
     res.status(200).json(matchToUpdate.toObject({ getters: true }));
   } catch (err) {
@@ -231,6 +249,11 @@ const cancelRequest = async (req, res, next) => {
         path: "match",
       },
     });
+
+    if (!matches) {
+      const error = new HttpError("Could not find matches", 404);
+      return next(error);
+    }
 
     const matchesArray = matches.matches;
     // check if already accepted match (cannot)
