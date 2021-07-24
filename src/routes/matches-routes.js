@@ -1,8 +1,14 @@
 const express = require("express");
+const checkAuth = require("../middleware/check-auth");
 
 const matchesController = require("../controllers/matches-controller");
 
 const router = express.Router();
+
+// ---------------------------------------- //
+//         Authenticate Routes Below        //
+// ---------------------------------------- //
+router.use(checkAuth);
 
 // ----------------------------- //
 //         PATCH REQUESTS        //
