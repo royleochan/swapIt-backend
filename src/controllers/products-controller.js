@@ -170,23 +170,25 @@ const getLikedProducts = async (req, res, next) => {
 };
 
 const searchForProducts = async (req, res, next) => {
-  const query = req.params.query;
+  const { query } = req.query;
   productPipeline[0].$search.text.query = query;
 
-  let aggCursor;
-  try {
-    aggCursor = await Product.aggregate(productPipeline);
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Fetching products failed, please try again later",
-      500
-    );
-    return next(error);
-  }
-
   const searchedProducts = [];
-  aggCursor.forEach((product) => searchedProducts.push(product));
+  if (query.length > 0) {
+    let aggCursor;
+    try {
+      aggCursor = await Product.aggregate(productPipeline);
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError(
+        "Fetching products failed, please try again later",
+        500
+      );
+      return next(error);
+    }
+
+    aggCursor.forEach((product) => searchedProducts.push(product));
+  }
 
   if (!searchedProducts) {
     const error = new HttpError("Could not find any products", 404);

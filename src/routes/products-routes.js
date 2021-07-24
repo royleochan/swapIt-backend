@@ -32,22 +32,21 @@ router.get("/:pid", productsControllers.getProductById);
 /**
  * @swagger
  *
- * /products/search/{query}:
+ * /products/search/title?query=:
  *   get:
  *     summary: Retrieves a list of products which matches the query
  *     tags: [Products]
  *     parameters:
- *       - in: path
+ *       - in: query
  *         name: query
  *         schema:
  *           type: string
- *         required: true
  *         description: search query
  *     responses:
  *       "200":
  *         description: A list of products which matches the query
  */
-router.get("/search/:query", productsControllers.searchForProducts);
+router.get("/search/title", productsControllers.searchForProducts);
 
 /**
  * @swagger
