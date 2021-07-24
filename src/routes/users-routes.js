@@ -224,11 +224,14 @@ router.post("/login", usersController.login);
  */
 router.post("/logout", usersController.logout);
 
+// ---------------------------------------- //
+//         Authenticate Routes Below        //
+// ---------------------------------------- //
+router.use(checkAuth);
+
 // ----------------------------- //
 //         PATCH REQUESTS        //
 // ----------------------------- //
-router.use(checkAuth);
-
 /**
  * @swagger
  *

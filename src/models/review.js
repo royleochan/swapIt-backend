@@ -19,7 +19,7 @@ const Schema = mongoose.Schema;
  *            description: Description of the review, can be up to 255 characters.
  *          rating:
  *            type: number
- *            description: Rating for the review.
+ *            description: Rating for the review, must be between 0 and 5.
  *          creator:
  *            type: string
  *            description: ObjectId for the user that created the review.
