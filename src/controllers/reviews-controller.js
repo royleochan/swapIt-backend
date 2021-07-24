@@ -16,10 +16,7 @@ const getReviewByMatchId = async (req, res, next) => {
     reviews = await Review.find({ creator: uid, matchId: mid });
     review = reviews[0]; // only a unique review given uid and mid
   } catch (err) {
-    const error = new HttpError(
-      "Fetching reviews failed, please try again later",
-      500
-    );
+    const error = new HttpError("Failed to fetch review", 500);
     return next(error);
   }
 
@@ -28,7 +25,7 @@ const getReviewByMatchId = async (req, res, next) => {
     return next(error);
   }
 
-  return res.json({
+  res.json({
     review,
   });
 };
@@ -49,10 +46,7 @@ const getReviewsByUserId = async (req, res, next) => {
       })
       .select("reviews reviewRating");
   } catch (err) {
-    const error = new HttpError(
-      "Fetching reviews failed, please try again later",
-      500
-    );
+    const error = new HttpError("Failed to fetch reviews", 500);
     return next(error);
   }
 
@@ -87,24 +81,22 @@ const createReview = async (req, res, next) => {
     userReviewed = await User.findById(reviewed).populate("reviews");
     loggedInUser = await User.findById(creator);
   } catch (err) {
-    const error = new HttpError(
-      "Uploading review failed, please try again",
-      500
-    );
+    console.log(err);
+    const error = new HttpError("Failed to upload review", 500);
     return next(error);
   }
 
-  if (!userReviewed) {
-    const error = new HttpError("Could not find user for provided id", 404);
+  if (!userReviewed || !loggedInUser) {
+    const error = new HttpError("Could not find user", 404);
     return next(error);
   }
 
-  let match;
-
-  const sess = await mongoose.startSession();
-  sess.startTransaction();
   try {
+    let match;
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
     match = await Match.findById(matchId);
+
     if (pid.toString() === match.productOneId.toString()) {
       match.productOneIsReviewed = true;
     } else {
@@ -118,7 +110,21 @@ const createReview = async (req, res, next) => {
         return totalReviewRating + review.rating;
       }, 0) / userReviewed.reviews.length
     ).toFixed(1);
+
+    let notification;
+    notification = new Notification({
+      creator: creator,
+      targetUser: reviewed,
+      description: `${loggedInUser.name} left you a review`,
+      type: "REVIEW",
+      isRead: false,
+    });
+    await notification.save({ session: sess });
+    userReviewed.notifications.push(notification._id);
+    await userReviewed.save({ session: sess });
+    await sess.commitTransaction();
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Failed to upload review, please try again.",
       500
@@ -126,26 +132,17 @@ const createReview = async (req, res, next) => {
     return next(error);
   }
 
-  // Send Notification
-  let notification;
-  sendPushNotification(
-    userReviewed.pushToken,
-    "New Review",
-    `${loggedInUser.name} left you a review`
-  );
+  // Send Notification (can fail)
+  try {
+    sendPushNotification(
+      userReviewed.pushToken,
+      "New Review",
+      `${loggedInUser.name} left you a review`
+    );
+  } catch (err) {
+    console.log(err.message);
+  }
 
-  notification = new Notification({
-    creator: creator,
-    targetUser: reviewed,
-    description: `${loggedInUser.name} left you a review`,
-    type: "REVIEW",
-    isRead: false,
-  });
-  await notification.save({ session: sess });
-  userReviewed.notifications.push(notification._id);
-
-  await userReviewed.save({ session: sess });
-  await sess.commitTransaction();
   res.status(201).json({
     review: createdReview.toObject({ getters: true }),
   });
