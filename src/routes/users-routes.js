@@ -61,16 +61,15 @@ router.get("/:uid", usersController.getUserById);
 /**
  * @swagger
  *
- * /users/search/{query}/{uid}:
+ * /users/search/{uid}/?query=:
  *   get:
  *     summary: Retrieve a list of users based on username query
  *     tags: [Users]
  *     parameters:
- *       - in: path
+ *       - in: query
  *         name: query
  *         schema:
  *           type: string
- *         required: true
  *         description: username of user
  *       - in: path
  *         name: uid
@@ -82,7 +81,7 @@ router.get("/:uid", usersController.getUserById);
  *       "200":
  *         description: A list of users that matches the query
  */
-router.get("/search/:query/:uid", usersController.searchForUsers);
+router.get("/search/:uid", usersController.searchForUsers);
 
 /**
  * @swagger
@@ -227,7 +226,7 @@ router.post("/logout", usersController.logout);
 // ---------------------------------------- //
 //         Authenticate Routes Below        //
 // ---------------------------------------- //
-router.use(checkAuth);
+// router.use(checkAuth);
 
 // ----------------------------- //
 //         PATCH REQUESTS        //

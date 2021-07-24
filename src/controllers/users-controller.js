@@ -81,21 +81,20 @@ const getFollowersUsers = async (req, res, next) => {
 };
 
 const searchForUsers = async (req, res, next) => {
-  const { query, uid } = req.params;
+  const { uid } = req.params;
+  const { query } = req.query;
   userPipeline.usernamePipeline[0].$search.autocomplete.query = query; // atlas autocomplete search on username field
 
   try {
-    const aggCursor = await User.aggregate(userPipeline.usernamePipeline);
     const searchedUsers = [];
-    aggCursor.forEach((user) => {
-      if (user._id.toString() !== uid) {
-        searchedUsers.push(user);
-      }
-    });
 
-    if (!searchedUsers) {
-      const error = new HttpError("Could not find any users", 404);
-      return next(error);
+    if (query.length > 0) {
+      const aggCursor = await User.aggregate(userPipeline.usernamePipeline);
+      aggCursor.forEach((user) => {
+        if (user._id.toString() !== uid) {
+          searchedUsers.push(user);
+        }
+      });
     }
 
     res.status(200).json({
