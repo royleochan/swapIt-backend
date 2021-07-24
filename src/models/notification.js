@@ -31,7 +31,7 @@ const Schema = mongoose.Schema;
  *            description: Description of notification.
  *          type:
  *            type: string
- *            description: Type of notification.
+ *            description: Type of notification, takes on a set of valid enum values.
  *          isRead:
  *            type: boolean
  */

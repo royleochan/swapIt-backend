@@ -4,8 +4,8 @@ const productValidationRules = () => {
   return [
     check("title")
       .trim()
-      .isLength({ min: 1, max: 16 })
-      .withMessage("Title must be between 1 and 16 characters"),
+      .isLength({ min: 1, max: 32 })
+      .withMessage("Title must be between 1 and 32 characters"),
     check("description")
       .trim()
       .isLength({ min: 1, max: 1000 })

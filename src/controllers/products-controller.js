@@ -26,12 +26,17 @@ const getProductById = async (req, res, next) => {
       },
     });
 
+    if (!product) {
+      const error = new HttpError("Could not find product for product id", 404);
+      return next(error);
+    }
+
     res.json({
       product: product.toObject({ getters: true }),
     });
   } catch (err) {
     console.log(err);
-    const error = new HttpError("Could not find product for product id", 404);
+    const error = new HttpError("Could not fetch product", 500);
     return next(error);
   }
 };
@@ -54,7 +59,7 @@ const getProductsByUserId = async (req, res, next) => {
     return next(error);
   }
 
-  if (!userWithProducts || userWithProducts.products.length === 0) {
+  if (!userWithProducts) {
     const error = new HttpError("Could not find products for user id", 404);
     return next(error);
   }
@@ -95,7 +100,7 @@ const getAllFollowingProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (!followingProducts) {
+  if (!followingProducts || !following) {
     const error = new HttpError("Could not find any products.", 404);
     return next(error);
   }
@@ -131,6 +136,36 @@ const getCategoryProducts = async (req, res, next) => {
 
   res.status(200).json({
     products: productsByCategory,
+  });
+};
+
+const getLikedProducts = async (req, res, next) => {
+  const userId = req.params.uid;
+
+  let userWithLikes;
+  try {
+    userWithLikes = await User.findById(userId).populate("likes");
+  } catch (err) {
+    console.log(err);
+    const error = new HttpError(
+      "Fetching liked products failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  if (!userWithLikes) {
+    const error = new HttpError(
+      "Could not find liked products for user id",
+      404
+    );
+    return next(error);
+  }
+
+  res.json({
+    data: userWithLikes.likes.map((likedProduct) =>
+      likedProduct.toObject({ getters: true })
+    ),
   });
 };
 
@@ -234,7 +269,7 @@ const updateProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     throw new HttpError("Invalid inputs passed, please check your data", 422);
   }
-  
+
   const { title, description, imageUrl, category } = req.body;
   const productId = req.params.pid;
 
@@ -247,6 +282,11 @@ const updateProduct = async (req, res, next) => {
       "Something went wrong, could not find the product.",
       500
     );
+    return next(error);
+  }
+
+  if (!product) {
+    const error = new HttpError("Could not find product.", 404);
     return next(error);
   }
 
@@ -609,36 +649,6 @@ const unlikeProduct = async (req, res, next) => {
     const error = new HttpError("Something went wrong.", 500);
     return next(error);
   }
-};
-
-const getLikedProducts = async (req, res, next) => {
-  const userId = req.params.uid;
-
-  let userWithLikes;
-  try {
-    userWithLikes = await User.findById(userId).populate("likes");
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Fetching liked products failed, please try again later",
-      500
-    );
-    return next(error);
-  }
-
-  if (!userWithLikes || userWithLikes.likes.length === 0) {
-    const error = new HttpError(
-      "Could not find liked products for user id",
-      404
-    );
-    return next(error);
-  }
-
-  res.json({
-    data: userWithLikes.likes.map((likedProduct) =>
-      likedProduct.toObject({ getters: true })
-    ),
-  });
 };
 
 exports.getProductById = getProductById;
