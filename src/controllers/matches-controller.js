@@ -186,6 +186,12 @@ const acceptRequest = async (req, res, next) => {
     ).populate("creator");
     await matchToUpdate.save({ session: sess });
 
+    // Mark both products as swapped
+    otherProduct.isSwapped = true;
+    matches.isSwapped = true;
+    await otherProduct.save({ session: sess });
+    await matches.save({ session: sess });
+
     // Create Notification For Both Users:
     let notification = new Notification({
       creator: matches.creator._id,

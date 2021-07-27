@@ -13,6 +13,7 @@ const Schema = mongoose.Schema;
  *          - imageUrl
  *          - minPrice
  *          - maxPrice
+ *          - isSwapped
  *          - creator
  *          - category
  *        properties:
@@ -31,6 +32,8 @@ const Schema = mongoose.Schema;
  *          maxPrice:
  *            type: number
  *            description: Maximum price of product.
+ *          isSwapped:
+ *            type: boolean
  *          creator:
  *            type: string
  *            description: UserId of creator.
@@ -51,6 +54,7 @@ const productSchema = new Schema(
     imageUrl: { type: String, required: true },
     minPrice: { type: Number, required: true },
     maxPrice: { type: Number, required: true },
+    isSwapped: { type: Boolean, required: true, default: false },
     creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
     likes: [{ type: mongoose.Types.ObjectId, ref: "User" }],
     matches: [
