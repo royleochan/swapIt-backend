@@ -20,6 +20,11 @@ module.exports = productPipeline = [
     },
   },
   {
+    $match: {
+      isSwapped: false,
+    },
+  },
+  {
     $unwind: {
       path: "$creator",
       preserveNullAndEmptyArrays: true,

@@ -82,6 +82,7 @@ const getAllFollowingProducts = async (req, res, next) => {
       select: "products -_id",
       populate: {
         path: "products",
+        match: { isSwapped: false },
         populate: { path: "creator" },
       },
     });
@@ -118,6 +119,7 @@ const getCategoryProducts = async (req, res, next) => {
   let productsByCategory;
   try {
     productsByCategory = await Product.find({
+      isSwapped: false,
       category: filterCategory,
     }).populate("creator");
   } catch (err) {
