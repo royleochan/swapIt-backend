@@ -9,11 +9,15 @@ const { Schema } = mongoose;
  *    schemas:
  *      User:
  *        required:
+ *          -
  *          - username
  *          - email
  *          - password
  *          - name
  *        properties:
+ *          isVerified:
+ *            type: boolean
+ *            description: Check if email is verified.
  *          pushToken:
  *            type: string
  *            description: Expo push token of the user.
@@ -57,7 +61,8 @@ const { Schema } = mongoose;
  */
 const userSchema = new Schema(
   {
-    pushToken: { type: String },
+    isVerified: { type: Boolean, default: false },
+    pushToken: { type: String, default: "" },
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
