@@ -16,11 +16,12 @@ Ensure you have [node](https://nodejs.org/en/download/) installed together with 
     "DB_USER": <>,
     "DB_PASSWORD": <>,
     "DB_NAME": <>,
-    "SECRET_KEY": <>,
+    "JWT_SECRET_KEY": <>,
     "AWS_ACCESS_KEY_ID": <>,
     "AWS_SECRET_KEY": <>,
     "SWAPIT_EMAIL_ADDR": <>,
-    "SWAPIT_EMAIL_PASS": <>
+    "SWAPIT_EMAIL_PASS": <>,
+    "OTP_SECRET_KEY": <>
   }
 }
 

@@ -166,7 +166,7 @@ const signup = async (req, res, next) => {
     await createdUser.save();
 
     // Generate jwt token
-    token = jwt.sign({ user: createdUser }, `${process.env.SECRET_KEY}`);
+    token = jwt.sign({ user: createdUser }, `${process.env.JWT_SECRET_KEY}`);
 
     res
       .status(201)
@@ -199,7 +199,7 @@ const login = async (req, res, next) => {
     }
 
     // Generate jwt token
-    token = jwt.sign({ user: existingUser }, `${process.env.SECRET_KEY}`);
+    token = jwt.sign({ user: existingUser }, `${process.env.JWT_SECRET_KEY}`);
 
     res.status(200).json({
       user: existingUser.toObject({ getters: true }),
