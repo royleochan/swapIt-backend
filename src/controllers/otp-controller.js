@@ -35,7 +35,7 @@ const getOtp = async (req, res, next) => {
     });
   } catch (err) {
     console.log(err);
-    const error = new HttpError("Could not get OTP", 500);
+    const error = new HttpError("Could not send OTP", 500);
     return next(error);
   }
 };
@@ -79,7 +79,7 @@ const verifyEmail = async (req, res, next) => {
     await sess.commitTransaction();
 
     res.json({
-      Messaged: "Successfully verified email",
+      user: user.toObject({ getters: true }),
     });
   } catch (err) {
     console.log(err);
