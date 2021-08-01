@@ -339,7 +339,7 @@ const deleteProduct = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    await product.remove({ session: sess });
+    await product.deleteOne({ session: sess });
     product.creator.products.pull(product);
     await product.creator.save({ session: sess });
     await sess.commitTransaction();
@@ -574,7 +574,7 @@ const unlikeProduct = async (req, res, next) => {
         let matchToDelete = await Match.findById(
           unmatchedProductsMatches[i].match
         );
-        await matchToDelete.remove({ session: sess });
+        await matchToDelete.deleteOne({ session: sess });
       }
 
       let newMatchedProductsMatches;

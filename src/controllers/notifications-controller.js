@@ -77,7 +77,7 @@ const dismissNotification = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    await Notification.remove({ _id: notificationId });
+    await Notification.deleteOne({ _id: notificationId });
     user.notifications.pull(notificationId);
     await user.save({ session: sess });
     await sess.commitTransaction();
