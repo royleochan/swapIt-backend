@@ -232,6 +232,7 @@ const createProduct = async (req, res, next) => {
     creator,
     category,
     likes: [],
+    matches: [],
   });
 
   let user;
