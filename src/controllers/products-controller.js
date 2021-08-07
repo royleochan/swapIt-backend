@@ -298,6 +298,11 @@ const updateProduct = async (req, res, next) => {
     return next(error);
   }
 
+  if (product.isSwapped) {
+    const error = new HttpError("Cannot edit swapped product.", 400);
+    return next(error);
+  }
+
   product.title = title;
   product.description = description;
   product.imageUrl = imageUrl;
