@@ -5,31 +5,31 @@ const otpController = require("../controllers/otp-controller");
 const router = express.Router();
 
 // ----------------------------- //
-//          GET REQUESTS         //
+//          POST REQUESTS        //
 // ----------------------------- //
 /**
  * @swagger
  *
- * /otp/generate/{uid}:
- *   get:
- *     summary: Retrieves a 6 digit OTP
+ * /otp/generate:
+ *   post:
+ *     summary: Sends a 6 digit OTP to given email address
  *     tags: [Otp]
- *     parameters:
- *       - in: path
- *         name: uid
- *         schema:
- *           type: string
- *         required: true
- *         description: id of the user requesting for otp
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
  *     responses:
  *       "200":
- *         description: A 6 digit otp
+ *         description: Success
  */
-router.get("/generate/:uid", otpController.getOtp);
+router.post("/generate", otpController.getOtp);
 
-// ----------------------------- //
-//          POST REQUESTS        //
-// ----------------------------- //
 /**
  * @swagger
  *
@@ -54,6 +54,38 @@ router.get("/generate/:uid", otpController.getOtp);
  *       "200":
  *         description: Success
  */
-router.post("/verify/email", otpController.verifyEmail);
+router.post("/verify/email", otpController.verifyOtpForEmail);
+
+/**
+ * @swagger
+ *
+ * /otp/verify/password:
+ *   post:
+ *     summary: Verifies otp and resets password
+ *     tags: [Otp]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - uid
+ *               - otpValue
+ *               - newPassword
+ *               - newPasswordConfirm
+ *             properties:
+ *               uid:
+ *                 type: string
+ *               otpValue:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *               newPasswordConfirm:
+ *                 type: string
+ *     responses:
+ *       "200":
+ *         description: Success
+ */
+router.post("/verify/password", otpController.verifyOtpForPassword);
 
 module.exports = router;
