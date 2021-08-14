@@ -21,9 +21,14 @@ const router = express.Router();
  *             type: object
  *             required:
  *               - email
+ *               - type
  *             properties:
  *               email:
  *                 type: string
+ *               type:
+ *                 type: string
+ *                 description: generate otp for either verifying email or resetting password ('email' or 'password')
+ *                 example: 'email'
  *     responses:
  *       "200":
  *         description: Success

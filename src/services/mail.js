@@ -23,10 +23,9 @@ const email = new Email({
   preview: false,
 });
 
-// create send email function
-const sendEmail = async (from, to, subject, text) => {
+const sendOtpEmail = async (from, to, isEmail, subject, otp, name) => {
   const mailOptions = {
-    template: "hello",
+    template: isEmail ? "verifyEmail" : "resetPassword",
     message: {
       from: {
         name: "SwapIt Singapore",
@@ -36,7 +35,8 @@ const sendEmail = async (from, to, subject, text) => {
     },
     locals: {
       subject,
-      text,
+      otp,
+      name,
     },
   };
 
@@ -48,4 +48,4 @@ const sendEmail = async (from, to, subject, text) => {
   }
 };
 
-module.exports = sendEmail;
+exports.sendOtpEmail = sendOtpEmail;
