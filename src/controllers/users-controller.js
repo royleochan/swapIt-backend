@@ -304,8 +304,8 @@ const followUser = async (req, res, next) => {
       await notification.save({ session: sess });
       targetUser.notifications.push(notification._id);
 
-      await loggedInUser.save();
-      await targetUser.save();
+      await loggedInUser.save({ session: sess });
+      await targetUser.save({ session: sess });
       await sess.commitTransaction();
     } catch (err) {
       console.log(err);
@@ -359,8 +359,8 @@ const unfollowUser = async (req, res, next) => {
     sess.startTransaction();
     loggedInUser.following.pull(targetUserId);
     targetUser.followers.pull(loggedInUserId);
-    await loggedInUser.save();
-    await targetUser.save();
+    await loggedInUser.save({ session: sess });
+    await targetUser.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
     console.log(err);

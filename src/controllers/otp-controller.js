@@ -94,7 +94,7 @@ const verifyOtpForEmail = async (req, res, next) => {
 
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    await Otp.deleteMany({ userId: uid });
+    await Otp.deleteMany({ userId: uid }, { session: sess });
     const user = await User.findById(uid);
     user.isVerified = true;
     await user.save({ session: sess });
@@ -151,7 +151,7 @@ const verifyOtpForPassword = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     user.password = hashedPassword;
     await user.save({ session: sess });
-    await Otp.deleteMany({ userId: uid });
+    await Otp.deleteMany({ userId: uid }, { session: sess });
     await sess.commitTransaction();
 
     res.json({

@@ -1,5 +1,7 @@
-//---- Imports ----//
+//---- External Imports ----//
 const crypto = require("crypto");
+
+//---- Services Imports ----//
 const { sendTextEmail } = require("../services/mail");
 
 //---- Controllers ----//
