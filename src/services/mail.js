@@ -1,5 +1,6 @@
 //---- Imports ----//
 const nodemailer = require("nodemailer");
+const Email = require("email-templates");
 
 //---- Mail Configurations ----//
 
@@ -15,20 +16,32 @@ const mailerConfig = {
 // create transporter object
 const transporter = nodemailer.createTransport(mailerConfig);
 
+// create email object
+const email = new Email({
+  transport: transporter,
+  send: true,
+  preview: false,
+});
+
 // create send email function
 const sendEmail = async (from, to, subject, text) => {
   const mailOptions = {
-    from: {
-      name: "SwapIt Singapore",
-      address: from,
+    template: "hello",
+    message: {
+      from: {
+        name: "SwapIt Singapore",
+        address: from,
+      },
+      to,
     },
-    to,
-    subject,
-    text,
+    locals: {
+      subject,
+      text,
+    },
   };
 
   try {
-    const info = await transporter.sendMail(mailOptions);
+    const info = await email.send(mailOptions);
     return info;
   } catch (err) {
     throw err;
