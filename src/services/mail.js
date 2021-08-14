@@ -23,6 +23,29 @@ const email = new Email({
   preview: false,
 });
 
+//---- Send Email Functions ----//
+
+// normal text email
+const sendTextEmail = async (from, to, subject, text) => {
+  const mailOptions = {
+    from: {
+      name: "SwapIt Singapore",
+      address: from,
+    },
+    to,
+    subject,
+    text,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    return info;
+  } catch (err) {
+    throw err;
+  }
+};
+
+// send otp html email
 const sendOtpEmail = async (from, to, isEmail, subject, otp, name) => {
   const mailOptions = {
     template: isEmail ? "verifyEmail" : "resetPassword",
@@ -48,4 +71,5 @@ const sendOtpEmail = async (from, to, isEmail, subject, otp, name) => {
   }
 };
 
+exports.sendTextEmail = sendTextEmail;
 exports.sendOtpEmail = sendOtpEmail;

@@ -1,6 +1,6 @@
 //---- Imports ----//
 const crypto = require("crypto");
-const sendEmail = require("../services/mail");
+const { sendTextEmail } = require("../services/mail");
 
 //---- Controllers ----//
 const createReport = async (req, res, next) => {
@@ -12,7 +12,7 @@ const createReport = async (req, res, next) => {
 
   try {
     // send mail to the user
-    sendEmail(
+    sendTextEmail(
       process.env.SWAPIT_EMAIL_ADDR,
       email,
       `📝[${subject}: Case ${id}]`,
@@ -20,7 +20,7 @@ const createReport = async (req, res, next) => {
     );
 
     // send mail to ourselves
-    sendEmail(
+    sendTextEmail(
       process.env.SWAPIT_EMAIL_ADDR,
       process.env.SWAPIT_EMAIL_ADDR,
       `📝[${subject}: Case ${id}]`,
