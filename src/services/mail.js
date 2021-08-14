@@ -71,5 +71,33 @@ const sendOtpEmail = async (from, to, isEmail, subject, otp, name) => {
   }
 };
 
+// send report html email
+const sendReportEmail = async (from, to, subject, name, username, content) => {
+  const mailOptions = {
+    template: "report",
+    message: {
+      from: {
+        name: "SwapIt Singapore",
+        address: from,
+      },
+      to,
+    },
+    locals: {
+      subject,
+      name,
+      username,
+      content,
+    },
+  };
+
+  try {
+    const info = await email.send(mailOptions);
+    return info;
+  } catch (err) {
+    throw err;
+  }
+};
+
 exports.sendTextEmail = sendTextEmail;
 exports.sendOtpEmail = sendOtpEmail;
+exports.sendReportEmail = sendReportEmail;

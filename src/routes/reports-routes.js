@@ -20,6 +20,8 @@ const router = express.Router();
  *               - subject
  *               - email
  *               - description
+ *               - name
+ *               - username
  *             properties:
  *               subject:
  *                 type: string
@@ -30,6 +32,12 @@ const router = express.Router();
  *               description:
  *                 type: string
  *                 example: Faced bug where cannot upload product
+ *               name:
+ *                 type: string
+ *                 example: Roy
+ *               username:
+ *                 type: string
+ *                 example: leoroyy
  *     responses:
  *       "201":
  *         description: The sent email information
