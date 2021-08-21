@@ -1,14 +1,21 @@
+//----  External Imports ----//
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
+//----  Services Imports ----//
 const sendPushNotification = require("../services/pushNotification");
+
+//----  Models Imports ----//
 const HttpError = require("../models/http-error");
 const Match = require("../models/match");
 const Product = require("../models/product");
 const User = require("../models/user");
 const Notification = require("../models/notification");
+
+//----  Other Imports ----//
 const productPipeline = require("../controllers/pipelines/products-search");
 
+//----  Controllers ----//
 const getProductById = async (req, res, next) => {
   const { pid } = req.params;
 
@@ -345,11 +352,133 @@ const deleteProduct = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    await product.deleteOne({ session: sess });
-    product.creator.products.pull(product);
-    await product.creator.save({ session: sess });
+
+    if (product.isSwapped) {
+      // only set flag to deleted
+      product.isDeleted = true;
+      await product.save({ session: sess });
+
+      // remove productId from products array in creator
+      product.creator.products.pull(product);
+      await product.creator.save({ session: sess });
+
+      // remove productId from likes array for all users who liked the product
+      const usersToUpdate = await User.find({ likes: productId });
+      for (const user of usersToUpdate) {
+        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
+        await user.save({ session: sess });
+      }
+    } else {
+      // delete product completely from collection
+      await product.deleteOne({ session: sess });
+
+      // delete associated matches
+      await Match.deleteMany(
+        {
+          $or: [{ productOneId: productId }, { productTwoId: productId }],
+        },
+        { session: sess }
+      );
+      const productsToUpdate = await Product.find({
+        [product.matches.product]: { productId },
+      });
+      for (const product of productsToUpdate) {
+        product.matches = product.matches.filter(
+          (match) => match.pid.toString() !== productId
+        );
+        await product.save({ session: sess });
+      }
+
+      // delete associated notifications & remove productId from likes array for all users who liked the product
+      let usersToUpdate = [];
+      const usersToUpdateLikes = new Map();
+      const usersToUpdateNotifications = new Map();
+      const usersToUpdateBoth = new Map();
+
+      const notificationsToRemove = await Notification.find({
+        $or: [{ productId: productId }, { matchedProductId: productId }],
+      });
+      for (const notification of notificationsToRemove) {
+        const notificationId = this._id;
+        usersToUpdate = await User.find({
+          notifications: notificationId,
+        });
+        for (const user of usersToUpdate) {
+          usersToUpdateNotifications.set(user._id.toString(), [
+            user,
+            notificationId,
+          ]);
+        }
+
+        await notification.deleteOne({ session: sess });
+      }
+
+      usersToUpdate = await User.find({ likes: productId });
+
+      for (const user of usersToUpdate) {
+        const userId = user._id.toString();
+        if (usersToUpdateNotifications.has(userId)) {
+          usersToUpdateBoth.set(
+            user._id.toString(),
+            usersToUpdateNotifications.get(userId)
+          );
+
+          usersToUpdateNotifications.delete(userId);
+        } else {
+          usersToUpdateLikes.set(user._id.toString(), user);
+        }
+      }
+
+      const productCreatorId = product.creator._id.toString();
+
+      for (const [uid, user] of usersToUpdateLikes) {
+        if (uid === productCreatorId) {
+          user.products.pull(product);
+        }
+
+        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
+        await user.save({ session: sess });
+      }
+
+      for (const [uid, data] of usersToUpdateNotifications) {
+        const [user, notificationId] = [data];
+
+        if (uid === productCreatorId) {
+          user.products.pull(product);
+        }
+
+        user.notifications = user.notifications.filter(
+          (nid) => nid.toString() !== notificationId.toString()
+        );
+        await user.save({ session: sess });
+      }
+
+      for (const [uid, data] of usersToUpdateBoth) {
+        const [user, notificationId] = data;
+
+        if (uid === productCreatorId) {
+          user.products.pull(product);
+        }
+
+        user.notifications = user.notifications.filter(
+          (nid) => nid.toString() !== notificationId.toString()
+        );
+        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
+        await user.save({ session: sess });
+      }
+
+      // remove productId from products array in creator
+      if (
+        !usersToUpdateLikes.has(productCreatorId) &&
+        !usersToUpdateNotifications.has(productCreatorId) &&
+        !usersToUpdateBoth.has(productCreatorId)
+      ) {
+        product.creator.products.pull(product);
+        await product.creator.save({ session: sess });
+      }
+    }
     await sess.commitTransaction();
-  } catch {
+  } catch (err) {
     console.log(err);
     const error = new HttpError(
       "Something went wrong, could not delete product.",
