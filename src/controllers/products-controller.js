@@ -379,12 +379,13 @@ const deleteProduct = async (req, res, next) => {
         },
         { session: sess }
       );
+
       const productsToUpdate = await Product.find({
-        [product.matches.product]: { productId },
+        "matches.product": productId,
       });
       for (const product of productsToUpdate) {
         product.matches = product.matches.filter(
-          (match) => match.pid.toString() !== productId
+          (match) => match.product.toString() !== productId
         );
         await product.save({ session: sess });
       }
