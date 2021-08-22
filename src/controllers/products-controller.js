@@ -560,6 +560,7 @@ const likeProduct = async (req, res, next) => {
         creator: 1,
         matches: 1,
         title: 1,
+        isSwapped: 1,
       });
     } catch (err) {
       console.log(err);
