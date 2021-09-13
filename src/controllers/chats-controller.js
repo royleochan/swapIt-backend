@@ -29,10 +29,15 @@ const getAllChatRooms = async (req, res, next) => {
 };
 
 const getChatRoomById = async (req, res, next) => {
-    const chatRoomId = req.params.rid;
+    const { rid } = req.params;
     let room;
     try {
-        room = await Chat.findById(chatRoomId).populate("messages").populate("users");
+        room = await Chat.findById(rid).populate("messages").populate("users");
+        if (!room) {
+            const error = new HttpError("Could not find chat room with the chat room id", 404);
+            return next(error);
+        }
+        res.json({ room: room.toObject({ getters: true }) });
     } catch (err) {
         const error = new HttpError(
             "Something went wrong, could not find a chat room.",
@@ -40,11 +45,6 @@ const getChatRoomById = async (req, res, next) => {
         );
         return next(error);
     }
-    if (!room) {
-        const error = new HttpError("Could not find chat room with the chat room id", 404);
-        return next(error);
-    }
-    res.json({ room: room.toObject({ getters: true }) });
 };
 
 //Finds an active room if present, else creates a new active room
@@ -98,7 +98,7 @@ const createChatRoom = async (uid1, uid2) => {
     const createdChat = new Chat({
         users: [uid1, uid2],
         messages: [],
-        lastSeen: [new Date(), new Date()],
+        // lastSeen: [new Date(), new Date()],
     })
     try {
         const sess = await mongoose.startSession();
