@@ -1,5 +1,6 @@
 //---- Imports ----//
 const nodemailer = require("nodemailer");
+const Email = require("email-templates");
 
 //---- Mail Configurations ----//
 
@@ -15,8 +16,17 @@ const mailerConfig = {
 // create transporter object
 const transporter = nodemailer.createTransport(mailerConfig);
 
-// create send email function
-const sendEmail = async (from, to, subject, text) => {
+// create email object
+const email = new Email({
+  transport: transporter,
+  send: true,
+  preview: false,
+});
+
+//---- Send Email Functions ----//
+
+// normal text email
+const sendTextEmail = async (from, to, subject, text) => {
   const mailOptions = {
     from: {
       name: "SwapIt Singapore",
@@ -35,4 +45,59 @@ const sendEmail = async (from, to, subject, text) => {
   }
 };
 
-module.exports = sendEmail;
+// send otp html email
+const sendOtpEmail = async (from, to, isEmail, subject, otp, name) => {
+  const mailOptions = {
+    template: isEmail ? "verifyEmail" : "resetPassword",
+    message: {
+      from: {
+        name: "SwapIt Singapore",
+        address: from,
+      },
+      to,
+    },
+    locals: {
+      subject,
+      otp,
+      name,
+    },
+  };
+
+  try {
+    const info = await email.send(mailOptions);
+    return info;
+  } catch (err) {
+    throw err;
+  }
+};
+
+// send report html email
+const sendReportEmail = async (from, to, subject, name, username, content) => {
+  const mailOptions = {
+    template: "report",
+    message: {
+      from: {
+        name: "SwapIt Singapore",
+        address: from,
+      },
+      to,
+    },
+    locals: {
+      subject,
+      name,
+      username,
+      content,
+    },
+  };
+
+  try {
+    const info = await email.send(mailOptions);
+    return info;
+  } catch (err) {
+    throw err;
+  }
+};
+
+exports.sendTextEmail = sendTextEmail;
+exports.sendOtpEmail = sendOtpEmail;
+exports.sendReportEmail = sendReportEmail;

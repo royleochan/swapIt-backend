@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const { generateOtp, checkOtpExpired } = require("../services/otp");
-const sendEmail = require("../services/mail");
+const { sendOtpEmail } = require("../services/mail");
 
 const Otp = require("../models/otp");
 const User = require("../models/user");
@@ -12,7 +12,8 @@ const HttpError = require("../models/http-error");
 const { addMinutesToDate, getCurrentDate } = require("../utils/date");
 
 const getOtp = async (req, res, next) => {
-  const { email } = req.body;
+  const { email, type } = req.body;
+  const isVerifyEmail = type === "email";
 
   try {
     const userArr = await User.find({ email: email });
@@ -25,7 +26,7 @@ const getOtp = async (req, res, next) => {
       return next(error);
     }
 
-    const { _id } = userArr[0];
+    const { _id, name } = userArr[0];
     const otpValue = generateOtp();
 
     const createdOtp = new Otp({
@@ -37,11 +38,17 @@ const getOtp = async (req, res, next) => {
 
     await createdOtp.save();
 
-    await sendEmail(
+    const emailSubject = isVerifyEmail
+      ? `Confirm your email address with ${otpValue}`
+      : `Reset your password with ${otpValue}`;
+
+    await sendOtpEmail(
       process.env.SWAPIT_EMAIL_ADDR,
       email,
-      `Your SwapIt verification code is ${otpValue}`,
-      `Confirm your email address with ${otpValue}`
+      isVerifyEmail,
+      emailSubject,
+      otpValue,
+      name
     );
 
     res.json({
@@ -87,7 +94,7 @@ const verifyOtpForEmail = async (req, res, next) => {
 
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    await Otp.deleteMany({ userId: uid });
+    await Otp.deleteMany({ userId: uid }, { session: sess });
     const user = await User.findById(uid);
     user.isVerified = true;
     await user.save({ session: sess });
@@ -144,7 +151,7 @@ const verifyOtpForPassword = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     user.password = hashedPassword;
     await user.save({ session: sess });
-    await Otp.deleteMany({ userId: uid });
+    await Otp.deleteMany({ userId: uid }, { session: sess });
     await sess.commitTransaction();
 
     res.json({

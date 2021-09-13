@@ -13,7 +13,7 @@ const getReviewByMatchId = async (req, res, next) => {
 
   let review;
   try {
-    reviews = await Review.find({ creator: uid, matchId: mid });
+    const reviews = await Review.find({ creator: uid, matchId: mid });
     review = reviews[0]; // only a unique review given uid and mid
   } catch (err) {
     const error = new HttpError("Failed to fetch review", 500);
@@ -65,6 +65,18 @@ const createReview = async (req, res, next) => {
   }
 
   const { description, creator, reviewed, rating, matchId, pid } = req.body;
+
+  try {
+    const reviews = await Review.find({ creator, matchId });
+
+    if (reviews.length >= 1) {
+      const error = new HttpError("Review has already been made", 400);
+      return next(error);
+    }
+  } catch (err) {
+    const error = new HttpError("Failed to fetch review", 500);
+    return next(error);
+  }
 
   const createdReview = new Review({
     description,

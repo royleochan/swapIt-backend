@@ -21,11 +21,11 @@ const createUserValidationRules = () => {
       .withMessage("Name must be between 1 and 20 characters"),
     check("description")
       .trim()
-      .isLength({ min: 1, max: 250 })
+      .isLength({ min: 0, max: 250 })
       .withMessage("Description must be between 1 and 250 characters"),
     check("location")
       .trim()
-      .isLength({ min: 1, max: 60 })
+      .isLength({ min: 0, max: 60 })
       .withMessage("Location must be between 1 and 60 characters"),
   ];
 };

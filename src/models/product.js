@@ -34,6 +34,9 @@ const Schema = mongoose.Schema;
  *          isSwapped:
  *            type: boolean
  *            description: Default set to false.
+ *          isDeleted:
+ *            type: boolean
+ *            description: Default set to false.
  *          creator:
  *            type: string
  *            description: UserId of creator.
@@ -55,6 +58,7 @@ const productSchema = new Schema(
     minPrice: { type: Number, required: true },
     maxPrice: { type: Number, required: true },
     isSwapped: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
     creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
     likes: [{ type: mongoose.Types.ObjectId, ref: "User" }],
     matches: [
