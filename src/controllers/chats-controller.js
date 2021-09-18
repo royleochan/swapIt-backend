@@ -1,5 +1,6 @@
 const HttpError = require("../models/http-error");
 const Chat = require("../models/chat");
+const Product = require("../models/product");
 const User = require("../models/user");
 const mongoose = require("mongoose");
 
@@ -10,9 +11,11 @@ const getAllChatRooms = async (req, res, next) => {
         rooms = await User.findById(userId).populate({
             path: "chats",
             populate: [
+                { path: "product"},
                 { path: "users" },
                 { path: "messages" }
-            ]
+            ],
+            options: { sort: { updatedAt: -1 }},
         });
     } catch (err) {
         const error = new HttpError(
@@ -32,7 +35,11 @@ const getChatRoomById = async (req, res, next) => {
     const { rid } = req.params;
     let room;
     try {
-        room = await Chat.findById(rid).populate("messages").populate("users");
+        room = await Chat.findById(rid).populate([
+            { path: "product" },
+            { path: "users" },
+            { path: "messages" }
+        ]);
         if (!room) {
             const error = new HttpError("Could not find chat room with the chat room id", 404);
             return next(error);
@@ -49,13 +56,23 @@ const getChatRoomById = async (req, res, next) => {
 
 //Finds an active room if present, else creates a new active room
 const findMatchingRoom = async (req, res, next) => {
-    const { uid1, uid2 } = req.params;
+    const { pid, uid1, uid2 } = req.params;
     let user1, user2, room1, room2;
     try {
-        user1 = await User.findById(uid1).populate("chats");
-        room1 = user1.chats.find(chat => chat.users.includes(uid2));
-        user2 = await User.findById(uid2).populate("chats");
-        room2 = user2.chats.find(chat => chat.users.includes(uid1));
+        user1 = await User.findById(uid1).populate({
+            path: "chats",
+            populate:[
+                { path: "product" },
+            ]
+        });
+        room1 = user1.chats.find(chat => chat.product._id === pid);
+        user2 = await User.findById(uid2).populate({
+            path: "chats",
+            populate:[
+                { path: "product" },
+            ]
+        });
+        room2 = user2.chats.find(chat => chat.product._id === pid);
     } catch (e) {
         console.error(e);
         const error = new HttpError(
@@ -94,7 +111,7 @@ const findMatchingRoom = async (req, res, next) => {
     //Else create active room
     let createdRoom;
     try {
-        createdRoom = await createChatRoom(uid1, uid2);
+        createdRoom = await createChatRoom(user1, user2);
     } catch (e) {
         console.error(e);
     }
@@ -108,15 +125,24 @@ const findMatchingRoom = async (req, res, next) => {
     res.json({ room: createdRoom });
 }
 
-const createChatRoom = async (user1, user2) => {
-    if (!user1 || !user2) {
-        console.error("Failed to get users");
+const createChatRoom = async (pid, user1, user2) => {
+    if (!pid || !user1 || !user2) {
+        console.error("No product id, or no users");
+    }
+
+    let product;
+    try {
+        product = await Product.findById(pid);
+    } catch (err) {
+        console.error(err);
+        return;
     }
     const createdChat = new Chat({
-        users: [user1, user2],
+        product: product._id,
+        users: [user1._id, user2._id],
         messages: [],
         // lastSeen: [new Date(), new Date()],
-    })
+    });
 
     try {
         const sess = await mongoose.startSession();
@@ -133,6 +159,7 @@ const createChatRoom = async (user1, user2) => {
     }
 
     const result = createdChat.toObject({ getters: true });
+    result.product = product.toObject({ getters: true });
     result.users = [user1.toObject({ getters: true }), user2.toObject({ getters: true })];
     return result;
 }

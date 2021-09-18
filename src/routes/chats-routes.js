@@ -68,6 +68,6 @@ router.get("/:rid", chatsController.getChatRoomById);
  *       "200":
  *         description: An active chat room between two users
  */
-router.get("/:uid1/:uid2", chatsController.findMatchingRoom);
+router.get("/:pid/:uid1/:uid2", chatsController.findMatchingRoom);
 
 module.exports = router;

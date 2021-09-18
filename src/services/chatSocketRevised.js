@@ -2,7 +2,6 @@ const Chat = require("../models/chat");
 const Message = require("../models/message");
 
 const chatSocketRevised = (io) => {
-    console.log('setup chatSocketRevised!');
     io.on("connection", (socket) => {
         socket.on("join", async ({ chatId }) => {
             try {
@@ -15,6 +14,7 @@ const chatSocketRevised = (io) => {
             }
         });
         socket.on("new message", async ({ chatId, userId, content }) => {
+            console.log("new message:", content);
             try {
                 let chat = await Chat.findById(socket.activeRoom);
                 let msg = new Message({
@@ -31,6 +31,7 @@ const chatSocketRevised = (io) => {
             }
         });
         socket.on("new image", async ({ chatId, userId, imageUrl }) => {
+            console.log("new image:", imageUrl);
             try {
                 let chat = await Chat.findById(socket.activeRoom);
                 let msg = new Message({
