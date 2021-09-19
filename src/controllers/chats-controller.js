@@ -27,7 +27,9 @@ const getAllChatRooms = async (req, res, next) => {
       const numMessages = chat.messages.length;
       const hasMessage = numMessages >= 1;
       return {
-        user: chat.users.find((usr) => usr.id !== userId),
+        user: chat.users.find(
+          (usr) => usr._id.toString() !== userId.toString()
+        ),
         chatId: chat.id,
         product: chat.product,
         latestMessage: hasMessage ? chat.messages[numMessages - 1].content : "",
@@ -92,7 +94,7 @@ const findMatchingRoom = async (req, res, next) => {
         },
       ],
     });
-    room1 = user1.chats.find((chat) => chat.product._id === pid);
+    room1 = user1.chats.find((chat) => chat.product._id.toString() === pid);
     user2 = await User.findById(uid2, "name username profilePic").populate({
       path: "chats",
       populate: [
@@ -102,7 +104,7 @@ const findMatchingRoom = async (req, res, next) => {
         },
       ],
     });
-    room2 = user2.chats.find((chat) => chat.product._id === pid);
+    room2 = user2.chats.find((chat) => chat.product._id.toString() === pid);
   } catch (e) {
     console.error(e);
     const error = new HttpError(
