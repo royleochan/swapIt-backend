@@ -47,11 +47,17 @@ router.get("/:rid", chatsController.getChatRoomById);
 /**
  * @swagger
  *
- * /chats/{uid1}/{uid2}:
+ * /chats/{pid}/{uid1}/{uid2}:
  *   get:
  *     summary: Retrieve a chat room between two users
  *     tags: [Chats]
  *     parameters:
+ *       - in: path
+ *         name: pid
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: product id
  *       - in: path
  *         name: uid1
  *         schema:
