@@ -1,77 +1,94 @@
+const mongoose = require("mongoose");
+
 const Chat = require("../models/chat");
 const Message = require("../models/message");
 
-const updateMessagesSeen = async (chatId, currUser) => {
-    try {
-        let chat = await Chat.findById(chatId);
-        const messagesIdArray = chat.messages;
-        await Message.updateMany(
-            {
-                _id: { $in: messagesIdArray },
-                seen: { $eq: false },
-                creator: { $not: { $eq: currUser } }
-            },
-            { $set: { "seen": true } },
-            { multi: true },
-        );
-    } catch (e) {
-        console.error(e);
-    }
-};
+const sendPushNotification = require("./pushNotification");
 
 const chatSocket = (io) => {
-    io.on("connection", (socket) => {
-        socket.on("messages screen", (userId) => {
-            socket.join(userId);
-            socket.emit("messages joined");
-        });
-        socket.on("join", async ({ chatId, currUser }) => {
-            try {
-                socket.join(chatId);
-                await updateMessagesSeen(chatId, currUser);
-                socket.emit("joined", chatId);
-                socket.activeRoom = chatId;
-                socket.to(chatId).emit("user connected", currUser);
-            } catch (e) {
-                console.error(e);
-            }
-        });
-        socket.on("respond connected", ({ chatId, currUser }) => {
-            socket.to(chatId).emit("connected response", currUser);
-        });
-        socket.on("message", async ({ chatId, otherUserId, userId, message, imageUrl, seen }) => {
-            try {
-                let chat = await Chat.findById(socket.activeRoom);
-                let msg = new Message({
-                    creator: userId,
-                    content: message,
-                    imageUrl: imageUrl,
-                    seen: seen,
-                });
-                chat.messages.push(msg);
-                await msg.save();
-                await chat.save();
-                // socket.to(socket.activeRoom).emit("message", msg); //Todo: Logic no longer requires
-                //Sends event to both parties as they have to update their messages in redux store
-                io.to(otherUserId).to(userId).emit("new message", { chatId: chatId, message: msg });
-            } catch (e) {
-                console.error(e);
-            }
-        });
-        socket.on("leave room", async ({ chatId, currUser }) => {
-            socket.leave(chatId);
-            socket.to(chatId).emit("user disconnect", currUser);
-            try {
-                let chat = await Chat.findById(socket.activeRoom);
-                const userIndex = `${chat.users[0]._id}` === currUser ? 0 : 1;
-                chat.lastSeen[userIndex] = new Date();
-                chat.markModified('lastSeen');
-                await chat.save();
-            } catch (e) {
-                console.error(e);
-            }
-        });
+  io.on("connection", (socket) => {
+    socket.on("join", async ({ chatId }) => {
+      try {
+        console.log("Attempting to join:", chatId);
+        socket.join(chatId);
+        socket.emit("joined", chatId);
+        socket.activeRoom = chatId;
+      } catch (e) {
+        console.error(e);
+      }
     });
+    socket.on("new message", async ({ chatId, userId, content }) => {
+      console.log("new message:", content);
+      try {
+        let chat = await Chat.findById(socket.activeRoom).populate({
+          path: "users",
+          select: "name pushToken",
+        });
+        let msg = new Message({
+          creator: userId,
+          content: content,
+          imageUrl: "",
+        });
+        const sess = await mongoose.startSession();
+        sess.startTransaction();
+        chat.messages.push(msg);
+        await msg.save({ session: sess });
+        await chat.save({ session: sess });
+        await sess.commitTransaction();
+        socket.to(socket.activeRoom).emit("receive message", msg);
+
+        // Send Notification: can fail
+        const receivingUser = chat.users.find(
+          (usr) => usr._id.toString() !== userId.toString()
+        );
+        const sendingUser = chat.users.find(
+          (usr) => usr._id.toString() === userId.toString()
+        );
+        await sendPushNotification(
+          receivingUser.pushToken,
+          sendingUser.name,
+          content
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    });
+    socket.on("new image", async ({ chatId, userId, imageUrl }) => {
+      console.log("new image:", imageUrl);
+      try {
+        let chat = await Chat.findById(socket.activeRoom).populate({
+          path: "users",
+          select: "name pushToken",
+        });
+        let msg = new Message({
+          creator: userId,
+          content: "",
+          imageUrl: imageUrl,
+        });
+        const sess = await mongoose.startSession();
+        sess.startTransaction();
+        chat.messages.push(msg);
+        await msg.save({ session: sess });
+        await chat.save({ session: sess });
+        socket.to(socket.activeRoom).emit("receive image", msg);
+
+        // Send Notification: can fail
+        const receivingUser = chat.users.find(
+          (usr) => usr._id.toString() !== userId.toString()
+        );
+        const sendingUser = chat.users.find(
+          (usr) => usr._id.toString() === userId.toString()
+        );
+        await sendPushNotification(
+          receivingUser.pushToken,
+          sendingUser.name,
+          `${sendingUser.name} sent you an image`
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  });
 };
 
 module.exports = chatSocket;
