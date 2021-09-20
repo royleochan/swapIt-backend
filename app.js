@@ -36,8 +36,8 @@ server.setTimeout(6000);
 
 // start chat socket
 const io = socketio(server);
-const chatSocket = io.of("/chatSocketRevised");
-require("./src/services/chatSocketRevised")(chatSocket);
+const chatSocket = io.of("/chatSocket");
+require("./src/services/chatSocket")(chatSocket);
 
 // setup logging
 app.use(morgan("dev"));
