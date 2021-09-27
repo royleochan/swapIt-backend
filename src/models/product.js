@@ -41,8 +41,8 @@ const Schema = mongoose.Schema;
  *            type: string
  *            description: UserId of creator.
  *          likes:
- *            type: array[userId]
- *            description: Array of user ids.
+ *            type: array[likeId]
+ *            description: Array of like ids.
  *          matches:
  *            type: array[matchId]
  *            description: Array of match ids.
@@ -60,7 +60,7 @@ const productSchema = new Schema(
     isSwapped: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
-    likes: [{ type: mongoose.Types.ObjectId, ref: "User" }],
+    likes: [{ type: mongoose.Types.ObjectId, ref: "Like" }],
     matches: [
       {
         match: { type: mongoose.Types.ObjectId, ref: "Match" },

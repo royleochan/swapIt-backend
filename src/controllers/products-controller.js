@@ -7,6 +7,7 @@ const sendPushNotification = require("../services/pushNotification");
 
 //----  Models Imports ----//
 const HttpError = require("../models/http-error");
+const Like = require("../models/like");
 const Match = require("../models/match");
 const Product = require("../models/product");
 const User = require("../models/user");
@@ -155,7 +156,8 @@ const getLikedProducts = async (req, res, next) => {
   try {
     userWithLikes = await User.findById(userId).populate({
       path: "likes",
-      populate: { path: "creator" },
+      select: "productId",
+      populate: { path: "productId", populate: { path: "creator" } },
     });
   } catch (err) {
     console.log(err);
@@ -176,7 +178,7 @@ const getLikedProducts = async (req, res, next) => {
 
   res.json({
     data: userWithLikes.likes.map((likedProduct) =>
-      likedProduct.toObject({ getters: true })
+      likedProduct.productId.toObject({ getters: true })
     ),
   });
 };
@@ -538,29 +540,58 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    if (!product.likes.includes(userId)) {
-      product.likes.push(userId);
-      user.likes.push(product._id);
-    } else {
-      const error = new HttpError("Already liked item.", 400);
-      return next(error);
-    }
-
     if (!user) {
       const error = new HttpError("Could not find logged in user", 404);
       return next(error);
     }
 
+    // check if item has already been liked
+    let likeToFind;
+    try {
+      likeToFind = await Like.find({ userId: userId, productId: productId });
+      if (likeToFind.length >= 1) {
+        const error = new HttpError("Already liked item.", 400);
+        return next(error);
+      }
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError(
+        "Something went wrong, please try again later.",
+        500
+      );
+      return next(error);
+    }
+
+    // create like document and push to product and user arrays
+    try {
+      const newLike = await new Like({
+        productId: productId,
+        userId: userId,
+      }).save({ session: sess });
+      product.likes.push(newLike);
+      user.likes.push(newLike);
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError(
+        "Failed to like item, please try again later.",
+        500
+      );
+      return next(error);
+    }
+
+    // check for matches
     let creator;
     try {
-      creator = await User.findById(product.creator).populate("likes", {
-        minPrice: 1,
-        maxPrice: 1,
-        allowance: 1,
-        creator: 1,
-        matches: 1,
-        title: 1,
-        isSwapped: 1,
+      creator = await User.findById(
+        product.creator,
+        "likes pushToken notifications"
+      ).populate({
+        path: "likes",
+        select: "productId",
+        populate: {
+          path: "productId",
+          select: "minPrice maxPrice allowance creator matches title isSwapped",
+        },
       });
     } catch (err) {
       console.log(err);
@@ -576,8 +607,8 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    // check for matches
-    const matchedItems = creator.likes
+    const mappedProducts = creator.likes.map((item) => item.productId);
+    const matchedItems = mappedProducts
       .filter((item) => {
         return (
           item.creator.toString() === user._id.toString() && !item.isSwapped
@@ -752,6 +783,29 @@ const unlikeProduct = async (req, res, next) => {
     const sess = await mongoose.startSession();
     sess.startTransaction();
 
+    // find like document and delete it
+    let likeToFind;
+    try {
+      let likes = await Like.find({ userId: userId, productId: productId });
+      if (likes.length <= 0) {
+        const error = new HttpError(
+          "Cannot unlike item that you have not liked yet, please try again later.",
+          404
+        );
+        return next(error);
+      } else {
+        likeToFind = likes[0];
+        await Like.deleteOne({ _id: likeToFind._id });
+      }
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError(
+        "Something went wrong, please try again later.",
+        500
+      );
+      return next(error);
+    }
+
     // find product that has been unliked and filter away all matches with the user's items
     let product;
     try {
@@ -763,7 +817,10 @@ const unlikeProduct = async (req, res, next) => {
       });
 
       if (product.isSwapped) {
-        const error = new HttpError("Product has already been swapped", 400);
+        const error = new HttpError(
+          "Cannot unlike product that has already been swapped",
+          400
+        );
         return next(error);
       }
 
@@ -786,8 +843,8 @@ const unlikeProduct = async (req, res, next) => {
       );
       product.matches = newMatchedProductsMatches;
 
-      // remove userId from likes array of the unliked product
-      product.likes.pull(userId);
+      // remove like from likes array of the unliked product
+      product.likes.pull(likeToFind);
       await product.save({ session: sess });
     } catch (err) {
       console.log(err);
@@ -823,8 +880,8 @@ const unlikeProduct = async (req, res, next) => {
         }
       }
 
-      // remove product id from user likes array
-      user.likes.pull(product._id);
+      // remove like id from user likes array
+      user.likes.pull(likeToFind);
 
       await user.save({ session: sess });
     } catch (err) {

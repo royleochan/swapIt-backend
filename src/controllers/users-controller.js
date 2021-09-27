@@ -14,11 +14,17 @@ const getLikedUsers = async (req, res, next) => {
   const { pid } = req.params;
 
   try {
-    const users = await Product.findById(pid, "likes");
-    res.json({ users });
+    const result = await Product.findById(pid, "likes").populate({
+      path: "likes",
+      select: "userid",
+      populate: {
+        path: "userId",
+      },
+    });
+    res.json({ users: result.likes.map((data) => data.userId) });
   } catch (err) {
     console.log(err);
-    const error = new HttpError("Could not find product.", 404);
+    const error = new HttpError("Could not find users", 404);
     return next(error);
   }
 };

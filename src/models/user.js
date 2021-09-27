@@ -49,7 +49,7 @@ const { Schema } = mongoose;
  *          reviews:
  *            type: array[reviewId]
  *          likes:
- *            type: array[productId]
+ *            type: array[likeId]
  *          followers:
  *            type: array[userId]
  *          following:
@@ -75,7 +75,7 @@ const userSchema = new Schema(
     ],
     reviewRating: { type: Number, default: 0 },
     reviews: [{ type: mongoose.Types.ObjectId, required: true, ref: "Review" }],
-    likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Product" }],
+    likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Like" }],
     followers: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     following: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     chats: [{ type: mongoose.Types.ObjectId, required: true, ref: "Chat" }],
