@@ -365,9 +365,16 @@ const deleteProduct = async (req, res, next) => {
       await product.creator.save({ session: sess });
 
       // remove productId from likes array for all users who liked the product
-      const usersToUpdate = await User.find({ likes: productId });
+      const likesToRemove = await Like.find(
+        { productId: productId },
+        "userId"
+      ).populate({ path: "userId", select: "likes" });
+      const likeIdToRemove = likesToRemove[0]._id.toString();
+      const usersToUpdate = likesToRemove.map((data) => data.userId);
       for (const user of usersToUpdate) {
-        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
+        user.likes = user.likes.filter(
+          (likeId) => likeId.toString() !== likeIdToRemove
+        );
         await user.save({ session: sess });
       }
     } else {
@@ -392,7 +399,8 @@ const deleteProduct = async (req, res, next) => {
         await product.save({ session: sess });
       }
 
-      // delete associated notifications & remove productId from likes array for all users who liked the product
+      // delete associated notifications & remove like from all users who like the product
+      // need to use Map to avoid transaction write conflicts
       let usersToUpdate = [];
       const usersToUpdateLikes = new Map();
       const usersToUpdateNotifications = new Map();
@@ -786,16 +794,15 @@ const unlikeProduct = async (req, res, next) => {
     // find like document and delete it
     let likeToFind;
     try {
-      let likes = await Like.find({ userId: userId, productId: productId });
-      if (likes.length <= 0) {
+      likeToFind = await Like.findOne({ userId: userId, productId: productId });
+      if (!likeToFind) {
         const error = new HttpError(
           "Cannot unlike item that you have not liked yet, please try again later.",
           404
         );
         return next(error);
       } else {
-        likeToFind = likes[0];
-        await Like.deleteOne({ _id: likeToFind._id });
+        await likeToFind.deleteOne({ session: sess });
       }
     } catch (err) {
       console.log(err);
