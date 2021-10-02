@@ -1,6 +1,4 @@
-const mongoose = require("mongoose");
 const HttpError = require("../models/http-error");
-const User = require("../models/user");
 const Notification = require("../models/notification");
 
 const getNotificationsByUserId = async (req, res, next) => {
@@ -8,16 +6,12 @@ const getNotificationsByUserId = async (req, res, next) => {
 
   let notifications;
   try {
-    notifications = await User.findById(userId)
+    notifications = await Notification.find({ targetUser: userId })
       .populate({
-        path: "notifications",
-        populate: {
-          path: "creator productId matchedProductId",
-          select: "profilePic imageUrl",
-        },
-        options: { sort: { createdAt: -1 } },
+        path: "creator productId matchedProductId",
+        select: "profilePic imageUrl",
       })
-      .select("notifications");
+      .sort({ createdAt: -1 });
   } catch (err) {
     const error = new HttpError(
       "Fetching notifications failed, please try again later",
@@ -34,10 +28,9 @@ const getNotificationsByUserId = async (req, res, next) => {
     return next(error);
   }
 
-  res.json(notifications);
+  res.json({ notifications: notifications });
 };
 
-// Mark As Read
 const markNotificationsAsRead = async (req, res, next) => {
   const { userId, notificationIds } = req.body;
 
@@ -61,26 +54,10 @@ const markNotificationsAsRead = async (req, res, next) => {
 };
 
 const dismissNotification = async (req, res, next) => {
-  const { notificationId, userId } = req.params;
-
-  let user;
-  try {
-    user = await User.findById(userId);
-  } catch (err) {
-    const error = new HttpError(
-      "Something went wrong, could not find user.",
-      404
-    );
-    return next(error);
-  }
+  const { notificationId } = req.params;
 
   try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-    await Notification.deleteOne({ _id: notificationId }, { session: sess });
-    user.notifications.pull(notificationId);
-    await user.save({ session: sess });
-    await sess.commitTransaction();
+    await Notification.deleteOne({ _id: notificationId });
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not delete notification.",
