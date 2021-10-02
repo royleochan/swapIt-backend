@@ -167,7 +167,6 @@ const signup = async (req, res, next) => {
       followers: [],
       following: [],
       chats: [],
-      notifications: [],
     });
     await createdUser.save();
 
@@ -308,8 +307,6 @@ const followUser = async (req, res, next) => {
         isRead: false,
       });
       await notification.save({ session: sess });
-      targetUser.notifications.push(notification._id);
-
       await loggedInUser.save({ session: sess });
       await targetUser.save({ session: sess });
       await sess.commitTransaction();

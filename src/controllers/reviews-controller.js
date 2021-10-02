@@ -132,7 +132,6 @@ const createReview = async (req, res, next) => {
       isRead: false,
     });
     await notification.save({ session: sess });
-    userReviewed.notifications.push(notification._id);
     await userReviewed.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {

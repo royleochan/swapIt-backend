@@ -685,7 +685,6 @@ const likeProduct = async (req, res, next) => {
       isRead: false,
     });
     await notification.save({ session: sess });
-    creator.notifications.push(notification._id);
 
     // Create Notification(s) For Matches: both ways
     for (let i = 0; i < matchedItems.length; i++) {
@@ -709,7 +708,6 @@ const likeProduct = async (req, res, next) => {
         isRead: false,
       });
       await notification.save({ session: sess });
-      creator.notifications.push(notification._id);
 
       // To ownself
       notificationsToSendToOwnself.push(
@@ -730,7 +728,6 @@ const likeProduct = async (req, res, next) => {
         isRead: false,
       });
       await notification.save({ session: sess });
-      user.notifications.push(notification._id);
     }
 
     await creator.save({ session: sess });

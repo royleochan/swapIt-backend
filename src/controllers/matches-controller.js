@@ -88,8 +88,6 @@ const sendRequest = async (req, res, next) => {
       isRead: false,
     });
     await notification.save({ session: sess });
-    otherProduct.creator.notifications.push(notification._id);
-    await otherProduct.creator.save({ session: sess });
     await matchToUpdate.save({ session: sess });
     await sess.commitTransaction();
 
@@ -203,8 +201,6 @@ const acceptRequest = async (req, res, next) => {
       isRead: false,
     });
     await notification.save({ session: sess });
-    otherProduct.creator.notifications.push(notification._id);
-    await otherProduct.creator.save({ session: sess });
 
     notification = new Notification({
       creator: otherProduct.creator._id,
@@ -216,8 +212,6 @@ const acceptRequest = async (req, res, next) => {
       isRead: false,
     });
     await notification.save({ session: sess });
-    matches.creator.notifications.push(notification._id);
-    await matches.creator.save({ session: sess });
 
     await sess.commitTransaction();
 
