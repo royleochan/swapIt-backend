@@ -8,28 +8,6 @@ const User = require("../models/user");
 const Match = require("../models/match");
 const Notification = require("../models/notification");
 
-const getReviewByMatchId = async (req, res, next) => {
-  const { uid, mid } = req.params;
-
-  let review;
-  try {
-    const reviews = await Review.find({ creator: uid, matchId: mid });
-    review = reviews[0]; // only a unique review given uid and mid
-  } catch (err) {
-    const error = new HttpError("Failed to fetch review", 500);
-    return next(error);
-  }
-
-  if (!review) {
-    const error = new HttpError("Could not find review ", 404);
-    return next(error);
-  }
-
-  res.json({
-    review,
-  });
-};
-
 const getReviewsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
@@ -161,4 +139,3 @@ const createReview = async (req, res, next) => {
 
 exports.createReview = createReview;
 exports.getReviewsByUserId = getReviewsByUserId;
-exports.getReviewByMatchId = getReviewByMatchId;

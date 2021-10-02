@@ -32,32 +32,6 @@ const router = express.Router();
  */
 router.get("/:uid", reviewsControllers.getReviewsByUserId);
 
-/**
- * @swagger
- *
- * /reviews/{uid}/{mid}:
- *   get:
- *     summary: Retrieve a unique review for given uid and mid (uid and mid uniquely identifies a review)
- *     tags: [Reviews]
- *     parameters:
- *       - in: path
- *         name: uid
- *         schema:
- *           type: string
- *         required: true
- *         description: id of the user
- *       - in: path
- *         name: mid
- *         schema:
- *           type: string
- *         required: true
- *         description: id of the match
- *     responses:
- *       "200":
- *         description: A review
- */
-router.get("/:uid/:mid", reviewsControllers.getReviewByMatchId);
-
 // ---------------------------------------- //
 //         Authenticate Routes Below        //
 // ---------------------------------------- //
