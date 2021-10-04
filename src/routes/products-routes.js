@@ -51,26 +51,6 @@ router.get("/search/title", productsControllers.searchForProducts);
 /**
  * @swagger
  *
- * /products/user/{uid}:
- *   get:
- *     summary: Retrieves an array of products belonging to a user
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: uid
- *         schema:
- *           type: string
- *         required: true
- *         description: User id of the user
- *     responses:
- *       "200":
- *         description: An array of products with relevant fields populated
- */
-router.get("/user/:uid", productsControllers.getProductsByUserId);
-
-/**
- * @swagger
- *
  * /products/all/{uid}:
  *   get:
  *     summary: Retrieves an array of products for all the users that the user is following

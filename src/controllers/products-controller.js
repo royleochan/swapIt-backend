@@ -49,36 +49,7 @@ const getProductById = async (req, res, next) => {
   }
 };
 
-const getProductsByUserId = async (req, res, next) => {
-  const { uid } = req.params;
-
-  let userWithProducts;
-  try {
-    userWithProducts = await User.findById(uid).populate({
-      path: "products",
-      populate: { path: "creator" },
-    });
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Fetching products failed, please try again later",
-      500
-    );
-    return next(error);
-  }
-
-  if (!userWithProducts) {
-    const error = new HttpError("Could not find products for user id", 404);
-    return next(error);
-  }
-
-  res.json({
-    products: userWithProducts.products.map((product) =>
-      product.toObject({ getters: true })
-    ),
-  });
-};
-
+//TODO
 const getAllFollowingProducts = async (req, res, next) => {
   const { uid } = req.params;
 
@@ -244,31 +215,8 @@ const createProduct = async (req, res, next) => {
     matches: [],
   });
 
-  let user;
-
   try {
-    user = await User.findById(creator);
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Creating product failed, please try again.",
-      500
-    );
-    return next(error);
-  }
-
-  if (!user) {
-    const error = new HttpError("Could not find user.", 404);
-    return next(error);
-  }
-
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
     await createdProduct.save({ session: sess });
-    user.products.push(createdProduct);
-    await user.save({ session: sess });
-    await sess.commitTransaction();
   } catch (err) {
     console.log(err);
     const error = new HttpError(
@@ -331,6 +279,7 @@ const updateProduct = async (req, res, next) => {
   res.status(200).json({ product: product.toObject({ getters: true }) });
 };
 
+//TODO: redo
 const deleteProduct = async (req, res, next) => {
   const productId = req.params.pid;
 
@@ -780,6 +729,7 @@ const likeProduct = async (req, res, next) => {
   }
 };
 
+//TODO
 const unlikeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
@@ -915,7 +865,6 @@ const unlikeProduct = async (req, res, next) => {
 };
 
 exports.getProductById = getProductById;
-exports.getProductsByUserId = getProductsByUserId;
 exports.getAllFollowingProducts = getAllFollowingProducts;
 exports.getCategoryProducts = getCategoryProducts;
 exports.searchForProducts = searchForProducts;

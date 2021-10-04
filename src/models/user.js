@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 const Review = require("./review");
+const Product = require("./product");
 
 const { Schema } = mongoose;
 
@@ -65,9 +66,6 @@ const userSchema = new Schema(
     profilePic: { type: String, default: "https://i.imgur.com/tiRSkS8.jpg" },
     description: { type: String, default: "" },
     location: { type: String, default: "" },
-    products: [
-      { type: mongoose.Types.ObjectId, required: true, ref: "Product" },
-    ],
     likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Like" }],
     followers: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     following: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
@@ -83,6 +81,13 @@ userSchema.methods.getReviewRating = async function () {
 
   //TODO: calculate review rating
   return 0;
+};
+
+userSchema.methods.getProducts = async function () {
+  const userId = this._id;
+  const products = await Product.find({ creator: userId });
+
+  return products;
 };
 
 userSchema.plugin(uniqueValidator);

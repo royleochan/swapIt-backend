@@ -33,13 +33,12 @@ const getUserById = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const user = await User.findById(uid)
-      .select("-password")
-      .populate("products");
+    const user = await User.findById(uid).select("-password");
     res.json({
       user: {
         ...user.toObject({ getters: true }),
         reviewRating: await user.getReviewRating(),
+        products: await user.getProducts(),
       },
     });
   } catch (err) {
@@ -167,7 +166,6 @@ const signup = async (req, res, next) => {
       ...(description !== undefined && { description }),
       ...(location !== undefined && { location }),
       password: hashedPassword,
-      products: [],
       likes: [],
       followers: [],
       following: [],
@@ -212,7 +210,11 @@ const login = async (req, res, next) => {
     token = jwt.sign({ user: existingUser }, `${process.env.JWT_SECRET_KEY}`);
 
     res.status(200).json({
-      user: existingUser.toObject({ getters: true }),
+      user: {
+        ...existingUser.toObject({ getters: true }),
+        reviewRating: await existingUser.getReviewRating(),
+        products: await existingUser.getProducts(),
+      },
       token: token,
     });
   } catch (err) {
@@ -266,7 +268,13 @@ const updateUser = async (req, res, next) => {
   try {
     await user.save();
 
-    res.status(200).json({ user: user.toObject({ getters: true }) });
+    res.status(200).json({
+      user: {
+        ...user.toObject({ getters: true }),
+        reviewRating: await user.getReviewRating(),
+        products: await user.getProducts(),
+      },
+    });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
@@ -385,7 +393,7 @@ const updatePushToken = async (req, res, next) => {
 
   let user;
   try {
-    user = await User.findById(userId).populate("products");
+    user = await User.findById(userId);
   } catch (err) {
     console.log(err);
     const error = new HttpError("Could not find user.", 404);
@@ -396,7 +404,15 @@ const updatePushToken = async (req, res, next) => {
 
   try {
     await user.save();
-    res.status(200).json({ user: user.toObject({ getters: true }) });
+    res
+      .status(200)
+      .json({
+        user: {
+          ...user.toObject({ getters: true }),
+          reviewRating: await user.getReviewRating(),
+          products: await user.getProducts(),
+        },
+      });
   } catch (err) {
     console.log(err);
     const error = new HttpError("Failed to update push token.", 500);
