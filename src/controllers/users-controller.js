@@ -36,7 +36,12 @@ const getUserById = async (req, res, next) => {
     const user = await User.findById(uid)
       .select("-password")
       .populate("products");
-    res.json({ user: user.toObject({ getters: true }) });
+    res.json({
+      user: {
+        ...user.toObject({ getters: true }),
+        reviewRating: await user.getReviewRating(),
+      },
+    });
   } catch (err) {
     console.log(err);
     const error = new HttpError("Could not find user.", 404);

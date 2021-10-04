@@ -13,16 +13,12 @@ const getReviewsByUserId = async (req, res, next) => {
 
   let reviews;
   try {
-    reviews = await User.findById(userId)
+    reviews = await Review.find({ reviewed: userId })
       .populate({
-        path: "reviews",
-        populate: {
-          path: "creator",
-          select: "profilePic name",
-        },
-        options: { sort: { createdAt: -1 } },
+        path: "creator",
+        select: "profilePic name",
       })
-      .select("reviews reviewRating");
+      .sort({ createdAt: -1 });
   } catch (err) {
     const error = new HttpError("Failed to fetch reviews", 500);
     return next(error);
@@ -33,7 +29,7 @@ const getReviewsByUserId = async (req, res, next) => {
     return next(error);
   }
 
-  res.json(reviews);
+  res.json({ reviews: reviews });
 };
 
 const createReview = async (req, res, next) => {
@@ -68,7 +64,7 @@ const createReview = async (req, res, next) => {
   let loggedInUser;
 
   try {
-    userReviewed = await User.findById(reviewed).populate("reviews");
+    userReviewed = await User.findById(reviewed);
     loggedInUser = await User.findById(creator);
   } catch (err) {
     console.log(err);
@@ -94,12 +90,6 @@ const createReview = async (req, res, next) => {
     }
     await match.save({ session: sess });
     await createdReview.save({ session: sess });
-    userReviewed.reviews.push(createdReview);
-    userReviewed.reviewRating = (
-      userReviewed.reviews.reduce((totalReviewRating, review) => {
-        return totalReviewRating + review.rating;
-      }, 0) / userReviewed.reviews.length
-    ).toFixed(1);
 
     let notification;
     notification = new Notification({
@@ -110,7 +100,6 @@ const createReview = async (req, res, next) => {
       isRead: false,
     });
     await notification.save({ session: sess });
-    await userReviewed.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
     console.log(err);

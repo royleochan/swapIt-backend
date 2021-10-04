@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
+const Review = require("./review");
 
 const { Schema } = mongoose;
 
@@ -42,12 +43,8 @@ const { Schema } = mongoose;
  *          location:
  *            type: string
  *            description: Up to 60 characters.
- *          reviewRating:
- *            type: number
  *          products:
  *            type: array[productId]
- *          reviews:
- *            type: array[reviewId]
  *          likes:
  *            type: array[likeId]
  *          followers:
@@ -71,8 +68,6 @@ const userSchema = new Schema(
     products: [
       { type: mongoose.Types.ObjectId, required: true, ref: "Product" },
     ],
-    reviewRating: { type: Number, default: 0 },
-    reviews: [{ type: mongoose.Types.ObjectId, required: true, ref: "Review" }],
     likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Like" }],
     followers: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     following: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
@@ -80,6 +75,15 @@ const userSchema = new Schema(
   },
   { timestamps: true }
 );
+
+// Methods //
+userSchema.methods.getReviewRating = async function () {
+  const userId = this._id;
+  const reviews = await Review.find({ reviewed: userId });
+
+  //TODO: calculate review rating
+  return 0;
+};
 
 userSchema.plugin(uniqueValidator);
 module.exports = mongoose.model("User", userSchema);
