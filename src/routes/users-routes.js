@@ -21,26 +21,6 @@ const router = express.Router();
 /**
  * @swagger
  *
- * /users/product/{pid}:
- *   get:
- *     summary: Retrieve a list of users who likes product with given pid
- *     tags: [Users]
- *     parameters:
- *       - in: path
- *         name: pid
- *         schema:
- *           type: string
- *         required: true
- *         description: id of the product
- *     responses:
- *       "200":
- *         description: An array of users who like the product
- */
-router.get("/product/:pid", usersController.getLikedUsers);
-
-/**
- * @swagger
- *
  * /users/{uid}:
  *   get:
  *     summary: Retrieve a user with given uid

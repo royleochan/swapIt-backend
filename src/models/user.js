@@ -66,7 +66,6 @@ const userSchema = new Schema(
     profilePic: { type: String, default: "https://i.imgur.com/tiRSkS8.jpg" },
     description: { type: String, default: "" },
     location: { type: String, default: "" },
-    likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Like" }],
     followers: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     following: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     chats: [{ type: mongoose.Types.ObjectId, required: true, ref: "Chat" }],

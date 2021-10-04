@@ -123,12 +123,11 @@ const getCategoryProducts = async (req, res, next) => {
 const getLikedProducts = async (req, res, next) => {
   const userId = req.params.uid;
 
-  let userWithLikes;
+  let likedProducts;
   try {
-    userWithLikes = await User.findById(userId).populate({
-      path: "likes",
-      select: "productId",
-      populate: { path: "productId", populate: { path: "creator" } },
+    likedProducts = await Like.find({ userId: userId }, "productId").populate({
+      path: "productId",
+      populate: { path: "creator" },
     });
   } catch (err) {
     console.log(err);
@@ -139,7 +138,7 @@ const getLikedProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (!userWithLikes) {
+  if (!likedProducts) {
     const error = new HttpError(
       "Could not find liked products for user id",
       404
@@ -148,7 +147,7 @@ const getLikedProducts = async (req, res, next) => {
   }
 
   res.json({
-    data: userWithLikes.likes.map((likedProduct) =>
+    data: likedProducts.map((likedProduct) =>
       likedProduct.productId.toObject({ getters: true })
     ),
   });
@@ -450,6 +449,7 @@ const deleteProduct = async (req, res, next) => {
   res.status(200).json({ message: "Deleted Product" });
 };
 
+//TODO
 const likeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
