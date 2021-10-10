@@ -17,6 +17,8 @@ const matchesRoutes = require("./src/routes/matches-routes");
 const notificationsRoutes = require("./src/routes/notifications-routes");
 const reportsRoutes = require("./src/routes/reports-routes");
 const otpRoutes = require("./src/routes/otp-routes");
+const recommenderRoutes = require("./src/routes/recommender-routes");
+
 
 // create server
 const app = express();
@@ -58,6 +60,7 @@ app.use("/api/matches", matchesRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/otp", otpRoutes);
+app.use("/api/recommender", recommenderRoutes);
 
 // route to handle retrieval of s3 image upload url
 app.get("/api/s3Url", async (req, res) => {
