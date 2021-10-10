@@ -343,7 +343,6 @@ const deleteProduct = async (req, res, next) => {
   res.status(200).json({ message: "Deleted Product" });
 };
 
-//TODO
 const likeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
@@ -355,7 +354,10 @@ const likeProduct = async (req, res, next) => {
     // find product and product creator
     let product;
     try {
-      product = await Product.findById(productId).populate("creator");
+      product = await Product.findById(productId).populate({
+        path: "creator",
+        select: "pushToken",
+      });
     } catch (err) {
       console.log(err);
       const error = new HttpError(
@@ -378,7 +380,7 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    // find user
+    // find user who like the product
     let user;
     try {
       user = await User.findById(userId);
@@ -399,8 +401,8 @@ const likeProduct = async (req, res, next) => {
     // check if item has already been liked
     let likeToFind;
     try {
-      likeToFind = await Like.find({ userId: userId, productId: productId });
-      if (likeToFind.length >= 1) {
+      likeToFind = await Like.findOne({ userId: userId, productId: productId });
+      if (likeToFind) {
         const error = new HttpError("Already liked item.", 400);
         return next(error);
       }
@@ -413,9 +415,9 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    // create like document and push to product and user arrays
+    // create like document
     try {
-      const newLike = await new Like({
+      await new Like({
         productId: productId,
         userId: userId,
       }).save({ session: sess });
@@ -429,34 +431,28 @@ const likeProduct = async (req, res, next) => {
     }
 
     // check for matches
-    let creator;
+    let creatorLikedItems;
     try {
-      creator = await User.findById(
-        product.creator,
-        "likes pushToken notifications"
-      ).populate({
-        path: "likes",
-        select: "productId",
-        populate: {
-          path: "productId",
-          select: "minPrice maxPrice allowance creator matches title isSwapped",
+      let getCreatorLikedItems = await Likes.find(
+        {
+          userId: product.creator,
         },
+        "productId"
+      ).populate({
+        path: "productId",
+        select: "minPrice maxPrice allowance creator matches title isSwapped",
       });
+      creatorLikedItems = getCreatorLikedItems.map((item) => item.productId);
     } catch (err) {
       console.log(err);
       const error = new HttpError(
-        "Fetching user failed, please try again later.",
+        "Something went wrong, please try again later.",
         500
       );
       return next(error);
     }
 
-    if (!creator) {
-      const error = new HttpError("Could not find product creator.", 404);
-      return next(error);
-    }
-
-    const matchedItems = mappedProducts
+    const matchedItems = creatorLikedItems
       .filter((item) => {
         return (
           item.creator.toString() === user._id.toString() && !item.isSwapped
@@ -507,7 +503,7 @@ const likeProduct = async (req, res, next) => {
 
     // Create Notification For Like
     let notification;
-    const { pushToken } = creator;
+    const { pushToken } = product.creator;
     notificationsToSendToOtherUser.push(
       async () =>
         await sendPushNotification(
