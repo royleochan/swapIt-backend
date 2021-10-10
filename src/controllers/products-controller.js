@@ -268,13 +268,12 @@ const updateProduct = async (req, res, next) => {
   res.status(200).json({ product: product.toObject({ getters: true }) });
 };
 
-//TODO: redo
 const deleteProduct = async (req, res, next) => {
   const productId = req.params.pid;
 
   let product;
   try {
-    product = await Product.findById(productId).populate("creator");
+    product = await Product.findById(productId);
   } catch (err) {
     console.log(err);
     const error = new HttpError(
@@ -298,26 +297,14 @@ const deleteProduct = async (req, res, next) => {
       product.isDeleted = true;
       await product.save({ session: sess });
 
-      // remove productId from products array in creator
-      product.creator.products.pull(product);
-      await product.creator.save({ session: sess });
-
-      // remove productId from likes array for all users who liked the product
-      const likesToRemove = await Like.find(
-        { productId: productId },
-        "userId"
-      ).populate({ path: "userId", select: "likes" });
-      const likeIdToRemove = likesToRemove[0]._id.toString();
-      const usersToUpdate = likesToRemove.map((data) => data.userId);
-      for (const user of usersToUpdate) {
-        user.likes = user.likes.filter(
-          (likeId) => likeId.toString() !== likeIdToRemove
-        );
-        await user.save({ session: sess });
-      }
+      // delete associated likes
+      Likes.deleteMany({ productId: productId }, { session: sess });
     } else {
       // delete product completely from collection
       await product.deleteOne({ session: sess });
+
+      // delete associated likes
+      await Likes.deleteMany({ productId: productId }, { session: sess });
 
       // delete associated matches
       await Match.deleteMany(
@@ -337,94 +324,11 @@ const deleteProduct = async (req, res, next) => {
         await product.save({ session: sess });
       }
 
-      // delete associated notifications & remove like from all users who like the product
-      // need to use Map to avoid transaction write conflicts
-      let usersToUpdate = [];
-      const usersToUpdateLikes = new Map();
-      const usersToUpdateNotifications = new Map();
-      const usersToUpdateBoth = new Map();
-
-      const notificationsToRemove = await Notification.find({
-        $or: [{ productId: productId }, { matchedProductId: productId }],
-      });
-      for (const notification of notificationsToRemove) {
-        const notificationId = this._id;
-        usersToUpdate = await User.find({
-          notifications: notificationId,
-        });
-        for (const user of usersToUpdate) {
-          usersToUpdateNotifications.set(user._id.toString(), [
-            user,
-            notificationId,
-          ]);
-        }
-
-        await notification.deleteOne({ session: sess });
-      }
-
-      usersToUpdate = await User.find({ likes: productId });
-
-      for (const user of usersToUpdate) {
-        const userId = user._id.toString();
-        if (usersToUpdateNotifications.has(userId)) {
-          usersToUpdateBoth.set(
-            user._id.toString(),
-            usersToUpdateNotifications.get(userId)
-          );
-
-          usersToUpdateNotifications.delete(userId);
-        } else {
-          usersToUpdateLikes.set(user._id.toString(), user);
-        }
-      }
-
-      const productCreatorId = product.creator._id.toString();
-
-      for (const [uid, user] of usersToUpdateLikes) {
-        if (uid === productCreatorId) {
-          user.products.pull(product);
-        }
-
-        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
-        await user.save({ session: sess });
-      }
-
-      for (const [uid, data] of usersToUpdateNotifications) {
-        const [user, notificationId] = [data];
-
-        if (uid === productCreatorId) {
-          user.products.pull(product);
-        }
-
-        user.notifications = user.notifications.filter(
-          (nid) => nid.toString() !== notificationId.toString()
-        );
-        await user.save({ session: sess });
-      }
-
-      for (const [uid, data] of usersToUpdateBoth) {
-        const [user, notificationId] = data;
-
-        if (uid === productCreatorId) {
-          user.products.pull(product);
-        }
-
-        user.notifications = user.notifications.filter(
-          (nid) => nid.toString() !== notificationId.toString()
-        );
-        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
-        await user.save({ session: sess });
-      }
-
-      // remove productId from products array in creator
-      if (
-        !usersToUpdateLikes.has(productCreatorId) &&
-        !usersToUpdateNotifications.has(productCreatorId) &&
-        !usersToUpdateBoth.has(productCreatorId)
-      ) {
-        product.creator.products.pull(product);
-        await product.creator.save({ session: sess });
-      }
+      // delete associated notifications
+      await Notification.deleteMany(
+        { productId: productId },
+        { session: sess }
+      );
     }
     await sess.commitTransaction();
   } catch (err) {
@@ -515,8 +419,6 @@ const likeProduct = async (req, res, next) => {
         productId: productId,
         userId: userId,
       }).save({ session: sess });
-      product.likes.push(newLike);
-      user.likes.push(newLike);
     } catch (err) {
       console.log(err);
       const error = new HttpError(
@@ -554,7 +456,6 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    const mappedProducts = creator.likes.map((item) => item.productId);
     const matchedItems = mappedProducts
       .filter((item) => {
         return (
@@ -788,7 +689,6 @@ const unlikeProduct = async (req, res, next) => {
       product.matches = newMatchedProductsMatches;
 
       // remove like from likes array of the unliked product
-      product.likes.pull(likeToFind);
       await product.save({ session: sess });
     } catch (err) {
       console.log(err);
@@ -825,7 +725,6 @@ const unlikeProduct = async (req, res, next) => {
       }
 
       // remove like id from user likes array
-      user.likes.pull(likeToFind);
 
       await user.save({ session: sess });
     } catch (err) {
