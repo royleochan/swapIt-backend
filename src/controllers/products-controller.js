@@ -626,18 +626,14 @@ const unlikeProduct = async (req, res, next) => {
     sess.startTransaction();
 
     // find like document and delete it
-    let likeToFind;
     try {
-      likeToFind = await Like.findOne({ userId: userId, productId: productId });
-      if (!likeToFind) {
-        const error = new HttpError(
-          "Cannot unlike item that you have not liked yet, please try again later.",
-          404
-        );
-        return next(error);
-      } else {
-        await likeToFind.deleteOne({ session: sess });
-      }
+      await Like.findOneAndDelete(
+        {
+          userId: userId,
+          productId: productId,
+        },
+        { session: sess }
+      );
     } catch (err) {
       console.log(err);
       const error = new HttpError(
@@ -671,10 +667,9 @@ const unlikeProduct = async (req, res, next) => {
         (match) => match.product.creator.toString() === userId.toString()
       );
       for (let i = 0; i < unmatchedProductsMatches.length; i++) {
-        let matchToDelete = await Match.findById(
-          unmatchedProductsMatches[i].match
-        );
-        await matchToDelete.deleteOne({ session: sess });
+        await Match.findOneAndDelete(unmatchedProductsMatches[i].match, {
+          session: sess,
+        });
       }
 
       // remove relevant matchIds from matches array of unliked product
@@ -684,7 +679,6 @@ const unlikeProduct = async (req, res, next) => {
       );
       product.matches = newMatchedProductsMatches;
 
-      // remove like from likes array of the unliked product
       await product.save({ session: sess });
     } catch (err) {
       console.log(err);
@@ -692,19 +686,11 @@ const unlikeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    if (!product) {
-      const error = new HttpError("Could not find product for this id", 404);
-      return next(error);
-    }
-
     // find user who unliked the product and remove all matches of his products with unliked product
-    let user;
     try {
-      user = await User.findById(userId).populate("products", {
-        matches: 1,
-      });
-      for (i = 0; i < user.products.length; i++) {
-        let newMatchedProductsMatches = user.products[i].matches.filter(
+      let userProducts = await Products.find({ creator: userId }, "matches");
+      for (i = 0; i < userProducts.length; i++) {
+        let newMatchedProductsMatches = userProducts[i].matches.filter(
           (match) => match.product.toString() !== productId.toString()
         );
         user.products[i].matches = newMatchedProductsMatches;
@@ -719,21 +705,12 @@ const unlikeProduct = async (req, res, next) => {
           return next(error);
         }
       }
-
-      // remove like id from user likes array
-
-      await user.save({ session: sess });
     } catch (err) {
       console.log(err);
       const error = new HttpError(
         "Fetching user failed, please try again later",
         500
       );
-      return next(error);
-    }
-
-    if (!user) {
-      const error = new HttpError("Could not find user for this user id", 404);
       return next(error);
     }
 
