@@ -60,7 +60,6 @@ const productSchema = new Schema(
     isSwapped: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
-    likes: [{ type: mongoose.Types.ObjectId, ref: "Like" }],
     matches: [
       {
         match: { type: mongoose.Types.ObjectId, ref: "Match" },
