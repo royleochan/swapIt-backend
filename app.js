@@ -18,8 +18,11 @@ const notificationsRoutes = require("./src/routes/notifications-routes");
 const reportsRoutes = require("./src/routes/reports-routes");
 const otpRoutes = require("./src/routes/otp-routes");
 
+require("dotenv").config();
+
 // create server
 const app = express();
+exports.app = app;
 const port = process.env.PORT || 5000;
 
 // setup swagger
@@ -80,9 +83,15 @@ app.use((error, req, res, next) => {
 });
 
 // connect to MongoDB
+const isTesting = process.env.NODE_ENV === "testing";
+
 mongoose
   .connect(
-    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.cqmho.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
+    `mongodb+srv://${process.env.DB_USER}:${
+      process.env.DB_PASSWORD
+    }@cluster0.cqmho.mongodb.net/${
+      isTesting ? process.env.TEST_DB_NAME : process.env.DB_NAME
+    }?retryWrites=true&w=majority`,
     {
       useFindAndModify: false,
       useUnifiedTopology: true,

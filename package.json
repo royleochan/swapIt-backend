@@ -4,7 +4,7 @@
   "description": "Backend for SwapIt react native mobile application",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "NODE_ENV=testing PORT=9000 mocha --recursive --exit --timeout 10000",
     "start": "node app.js",
     "dev": "nodemon app.js"
   },
@@ -13,6 +13,7 @@
   "dependencies": {
     "aws-sdk": "^2.922.0",
     "bcryptjs": "^2.4.3",
+    "dotenv": "^10.0.0",
     "email-templates": "^8.0.7",
     "expo-server-sdk": "^3.6.0",
     "express": "^4.17.1",
@@ -28,6 +29,9 @@
     "totp-generator": "0.0.9"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.4",
+    "chai": "^4.3.4",
+    "supertest": "^6.1.6",
+    "mocha": "^9.1.2"
   }
 }
