@@ -49,28 +49,18 @@ const getProductById = async (req, res, next) => {
   }
 };
 
-//TODO
 const getAllFollowingProducts = async (req, res, next) => {
   const { uid } = req.params;
 
   let following;
   let followingProducts;
   try {
-    following = await User.findById(uid, "following").populate({
-      path: "following",
-      select: "products -_id",
-      populate: {
-        path: "products",
-        match: { isSwapped: false },
-        populate: { path: "creator" },
-      },
-    });
-    followingProducts = following.following
-      .map((user) => user.products)
-      .flat()
-      .sort((a, b) => {
-        return b.createdAt - a.createdAt;
-      });
+    let getFollowing = await User.findById(uid, "following");
+    following = getFollowing.following;
+    followingProducts = await Product.find({
+      creator: { $in: following },
+      isSwapped: false,
+    }).sort({ createdAt: -1 });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
