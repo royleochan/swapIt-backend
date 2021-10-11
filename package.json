@@ -4,7 +4,7 @@
   "description": "Backend for SwapIt react native mobile application",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_ENV=testing PORT=9000 mocha --recursive --exit --timeout 10000",
+    "test": "NODE_ENV=testing PORT=9000 mocha --reporter=nyan --recursive --exit --timeout 10000",
     "start": "node app.js",
     "dev": "nodemon app.js"
   },
