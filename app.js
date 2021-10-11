@@ -19,6 +19,7 @@ const reportsRoutes = require("./src/routes/reports-routes");
 const otpRoutes = require("./src/routes/otp-routes");
 
 require("dotenv").config();
+const isTesting = process.env.NODE_ENV === "testing";
 
 // create server
 const app = express();
@@ -43,7 +44,9 @@ const chatSocket = io.of("/chatSocket");
 require("./src/services/chatSocket")(chatSocket);
 
 // setup logging
-app.use(morgan("dev"));
+if (!isTesting) {
+  app.use(morgan("dev"));
+}
 
 // log errors
 app.use((error, req, res, next) => {
@@ -83,8 +86,6 @@ app.use((error, req, res, next) => {
 });
 
 // connect to MongoDB
-const isTesting = process.env.NODE_ENV === "testing";
-
 mongoose
   .connect(
     `mongodb+srv://${process.env.DB_USER}:${
