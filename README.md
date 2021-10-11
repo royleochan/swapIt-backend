@@ -8,24 +8,7 @@ Ensure you have [node](https://nodejs.org/en/download/) installed together with 
 
 ## Usage
 
-1. Create a nodemon.json file in the root of the app containing the env variables
-
-```javascript
-{
-  "env": {
-    "DB_USER": <>,
-    "DB_PASSWORD": <>,
-    "DB_NAME": <>,
-    "JWT_SECRET_KEY": <>,
-    "AWS_ACCESS_KEY_ID": <>,
-    "AWS_SECRET_KEY": <>,
-    "SWAPIT_EMAIL_ADDR": <>,
-    "SWAPIT_EMAIL_PASS": <>,
-    "OTP_SECRET_KEY": <>
-  }
-}
-
-```
+1. Create a .env file in the root of the app containing the env variables as stipulated in env_sample.txt
 
 2. Install dependencies
 
