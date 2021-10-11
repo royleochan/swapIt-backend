@@ -24,7 +24,7 @@ const isTesting = process.env.NODE_ENV === "testing";
 // create server
 const app = express();
 exports.app = app;
-const port = process.env.PORT || 5000;
+const port = isTesting ? 9000 : process.env.PORT || 5000;
 
 // setup swagger
 const specs = swaggerJsdoc(swaggerDocument);

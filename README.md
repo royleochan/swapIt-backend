@@ -35,7 +35,7 @@ npm run dev
 
 ## Testing
 
-Acceptance tests are done on a test database using mocha, chai and supertest.
+Acceptance tests are done on a test database using mocha, chai and supertest on port 9000.
 
 - Running all tests
 
