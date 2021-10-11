@@ -50,6 +50,20 @@ npm run dev
   
 ![Imgur](https://i.imgur.com/SMEzUJr.png)
 
+## Testing
+
+Acceptance tests are done on a test database using mocha, chai and supertest.
+
+- Running all tests
+
+```
+npm run test
+```
+
+- Alternatively, install the **mocha test explorer** vscode sidebar extension and run tests from the test sidebar
+
+![img](https://i.imgur.com/P3pvoaP.png)
+
 ## Deployment
 
 ### Development 
