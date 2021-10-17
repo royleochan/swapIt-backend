@@ -31,12 +31,15 @@ const specs = swaggerJsdoc(swaggerDocument);
 app.use("/index", swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
 
 // start server
-const server = app.listen(port, () => {
-  console.log("Server listening on port: %s", port);
-});
+let server;
+if (!isTesting) {
+  server = app.listen(port, () => {
+    console.log("Server listening on port: %s", port);
+  });
 
-// set timeout for requests to be 6 seconds
-server.setTimeout(6000);
+  // set timeout for requests to be 6 seconds
+  server.setTimeout(6000);
+}
 
 // start chat socket
 const io = socketio(server);
