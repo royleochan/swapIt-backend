@@ -179,7 +179,12 @@ const searchForProducts = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    throw new HttpError("Invalid inputs passed, please check your data", 422);
+    const error = new HttpError(
+      "Invalid inputs passed, please check your data",
+      422
+    );
+
+    return next(error);
   }
 
   const {
@@ -205,7 +210,7 @@ const createProduct = async (req, res, next) => {
   });
 
   try {
-    await createdProduct.save({ session: sess });
+    await createdProduct.save();
   } catch (err) {
     console.log(err);
     const error = new HttpError(
@@ -221,45 +226,25 @@ const createProduct = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    throw new HttpError("Invalid inputs passed, please check your data", 422);
+    const error = new HttpError(
+      "Invalid inputs passed, please check your data",
+      422
+    );
+
+    return next(error);
   }
 
-  const { title, description, imageUrl, category } = req.body;
   const productId = req.params.pid;
 
   let product;
   try {
-    product = await Product.findById(productId);
+    product = await Product.findByIdAndUpdate(productId, req.body, {
+      new: true,
+    });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
       "Something went wrong, could not find the product.",
-      500
-    );
-    return next(error);
-  }
-
-  if (!product) {
-    const error = new HttpError("Could not find product.", 404);
-    return next(error);
-  }
-
-  if (product.isSwapped) {
-    const error = new HttpError("Cannot edit swapped product.", 400);
-    return next(error);
-  }
-
-  product.title = title;
-  product.description = description;
-  product.imageUrl = imageUrl;
-  product.category = category;
-
-  try {
-    await product.save();
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not update the product.",
       500
     );
     return next(error);
@@ -298,13 +283,13 @@ const deleteProduct = async (req, res, next) => {
       await product.save({ session: sess });
 
       // delete associated likes
-      Likes.deleteMany({ productId: productId }, { session: sess });
+      await Like.deleteMany({ productId: productId }, { session: sess });
     } else {
       // delete product completely from collection
       await product.deleteOne({ session: sess });
 
       // delete associated likes
-      await Likes.deleteMany({ productId: productId }, { session: sess });
+      await Like.deleteMany({ productId: productId }, { session: sess });
 
       // delete associated matches
       await Match.deleteMany(
@@ -433,7 +418,7 @@ const likeProduct = async (req, res, next) => {
     // check for matches
     let creatorLikedItems;
     try {
-      let getCreatorLikedItems = await Likes.find(
+      let getCreatorLikedItems = await Like.find(
         {
           userId: product.creator,
         },
@@ -514,7 +499,7 @@ const likeProduct = async (req, res, next) => {
     );
     notification = new Notification({
       creator: userId,
-      targetUser: creator._id,
+      targetUser: product.creator._id,
       productId: product._id,
       description: `${user.name} liked your ${product.title}`,
       type: "LIKE",
@@ -536,7 +521,7 @@ const likeProduct = async (req, res, next) => {
 
       notification = new Notification({
         creator: userId,
-        targetUser: creator._id,
+        targetUser: product.creator._id,
         productId: product._id,
         matchedProductId: matchedItems[i]._id,
         description: `${matchedItems[i].title} matched with your ${product.title}`,
@@ -555,7 +540,7 @@ const likeProduct = async (req, res, next) => {
           )
       );
       notification = new Notification({
-        creator: creator._id,
+        creator: product.creator._id,
         targetUser: userId,
         productId: matchedItems[i]._id,
         matchedProductId: product._id,
@@ -566,9 +551,7 @@ const likeProduct = async (req, res, next) => {
       await notification.save({ session: sess });
     }
 
-    await creator.save({ session: sess });
     await product.save({ session: sess });
-    await user.save({ session: sess });
     await sess.commitTransaction();
 
     // Send Notifications to other user: can fail
