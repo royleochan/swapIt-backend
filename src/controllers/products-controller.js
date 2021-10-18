@@ -599,14 +599,87 @@ const likeProduct = async (req, res, next) => {
   }
 };
 
-//TODO
 const unlikeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
 
+  const sess = await mongoose.startSession();
+  sess.startTransaction();
+
   try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
+    // find product that has been unliked and filter away all matches with the user's items
+    let product;
+    try {
+      product = await Product.findById(productId).populate({
+        path: "matches",
+        populate: {
+          path: "product",
+        },
+      });
+
+      if (product.isSwapped) {
+        const error = new HttpError(
+          "Cannot unlike item that has already been swapped.",
+          400
+        );
+        return next(error);
+      }
+
+      // remove matches from the matches collection
+      let unmatchedProductsMatches;
+      unmatchedProductsMatches = product.matches.filter(
+        (match) => match.product.creator.toString() === userId.toString()
+      );
+      for (let i = 0; i < unmatchedProductsMatches.length; i++) {
+        await Match.findOneAndDelete(
+          { _id: unmatchedProductsMatches[i].match },
+          {
+            session: sess,
+          }
+        );
+      }
+
+      // remove relevant matchIds from matches array of unliked product
+      let newMatchedProductsMatches;
+      newMatchedProductsMatches = product.matches.filter(
+        (match) => match.product.creator.toString() !== userId.toString()
+      );
+      product.matches = newMatchedProductsMatches;
+
+      await product.save({ session: sess });
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError("Unliking product failed", 500);
+      return next(error);
+    }
+
+    // find user who unliked the product and remove all matches of his products with unliked product
+    try {
+      let userProducts = await Product.find({ creator: userId }, "matches");
+      for (i = 0; i < userProducts.length; i++) {
+        let newMatchedProductsMatches = userProducts[i].matches.filter(
+          (match) => match.product.toString() !== productId.toString()
+        );
+        userProducts[i].matches = newMatchedProductsMatches;
+        try {
+          await userProducts[i].save({ session: sess });
+        } catch (err) {
+          console.log(err);
+          const error = new HttpError(
+            "Could not unmatch item, please try again later",
+            500
+          );
+          return next(error);
+        }
+      }
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError(
+        "Fetching user failed, please try again later",
+        500
+      );
+      return next(error);
+    }
 
     // find like document and delete it
     try {
@@ -626,82 +699,11 @@ const unlikeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    // find product that has been unliked and filter away all matches with the user's items
-    let product;
-    try {
-      product = await Product.findById(productId).populate({
-        path: "matches",
-        populate: {
-          path: "product",
-        },
-      });
-
-      if (product.isSwapped) {
-        const error = new HttpError(
-          "Cannot unlike product that has already been swapped",
-          400
-        );
-        return next(error);
-      }
-
-      // remove matches from the matches collection
-      let unmatchedProductsMatches;
-      unmatchedProductsMatches = product.matches.filter(
-        (match) => match.product.creator.toString() === userId.toString()
-      );
-      for (let i = 0; i < unmatchedProductsMatches.length; i++) {
-        await Match.findOneAndDelete(unmatchedProductsMatches[i].match, {
-          session: sess,
-        });
-      }
-
-      // remove relevant matchIds from matches array of unliked product
-      let newMatchedProductsMatches;
-      newMatchedProductsMatches = product.matches.filter(
-        (match) => match.product.creator.toString() !== userId.toString()
-      );
-      product.matches = newMatchedProductsMatches;
-
-      await product.save({ session: sess });
-    } catch (err) {
-      console.log(err);
-      const error = new HttpError("Unliking product failed", 500);
-      return next(error);
-    }
-
-    // find user who unliked the product and remove all matches of his products with unliked product
-    try {
-      let userProducts = await Products.find({ creator: userId }, "matches");
-      for (i = 0; i < userProducts.length; i++) {
-        let newMatchedProductsMatches = userProducts[i].matches.filter(
-          (match) => match.product.toString() !== productId.toString()
-        );
-        user.products[i].matches = newMatchedProductsMatches;
-        try {
-          await user.products[i].save({ session: sess });
-        } catch (err) {
-          console.log(err);
-          const error = new HttpError(
-            "Could not unmatch item, please try again later",
-            500
-          );
-          return next(error);
-        }
-      }
-    } catch (err) {
-      console.log(err);
-      const error = new HttpError(
-        "Fetching user failed, please try again later",
-        500
-      );
-      return next(error);
-    }
-
+    await sess.commitTransaction();
     res.status(200).json({
       message: "Unliked Product",
       product: product.toObject({ getters: true }),
     });
-    await sess.commitTransaction();
   } catch (err) {
     console.log(err);
     const error = new HttpError("Something went wrong.", 500);
