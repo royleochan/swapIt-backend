@@ -363,7 +363,7 @@ describe("Products Acceptance Tests", () => {
       }
     });
 
-    it("should like product correctly (case with 1 match), throw 400 error if item has already been liked, throw 400 error if item has already been swapped", async () => {
+    it("should like product correctly (case with 1 match), throw 400 error if item has already been liked, throw 400 error if item has already been swapped, throw 400 error if trying to unlike item already swapped", async () => {
       // setting up
       const userOneProduct = newProduct({
         creator: USER_ONE_ID,
@@ -428,6 +428,17 @@ describe("Products Acceptance Tests", () => {
       });
       expect(x || y).to.be.true;
 
+      // check that match is added to matches array of both products (check not empty)
+      const getProductOneRes = await request(app).get(
+        `/api/products/${userOneProductId}`
+      );
+      const getProductTwoRes = await request(app).get(
+        `/api/products/${userTwoProductId}`
+      );
+
+      expect(getProductOneRes.body.product.matches).to.be.not.empty;
+      expect(getProductTwoRes.body.product.matches).to.be.not.empty;
+
       // check that like and match notifications are created
       expect(
         await Notification.exists({
@@ -490,9 +501,19 @@ describe("Products Acceptance Tests", () => {
         .auth(USER_THREE_TOKEN, { type: "bearer" })
         .send({ userId: USER_THREE_ID });
 
+      const userThreeUnlikesSwappedProduct = await request(app)
+        .patch(`/api/products/unlike/${userOneProductId}`)
+        .auth(USER_THREE_TOKEN, { type: "bearer" })
+        .send({ userId: USER_THREE_ID });
+
       expect(userThreeLikesSwappedProduct.status).to.be.eql(400);
       expect(userThreeLikesSwappedProduct.body.message).to.be.eql(
         "Cannot like item that has already been swapped."
+      );
+
+      expect(userThreeUnlikesSwappedProduct.status).to.be.eql(400);
+      expect(userThreeUnlikesSwappedProduct.body.message).to.be.eql(
+        "Cannot unlike item that has already been swapped."
       );
     });
 
@@ -545,10 +566,146 @@ describe("Products Acceptance Tests", () => {
     });
   });
 
-  //TODO
   //#####################################################//
   //   7. PATCH: /products/unlike/{pid} test suite       //
   //#####################################################//
+  describe("PATCH: /products/like/{pid}", () => {
+    // after test suite, delete all products, likes, matches, and notifications
+    after(async () => {
+      try {
+        await Product.deleteMany({});
+        await Like.deleteMany({});
+        await Match.deleteMany({});
+        await Notification.deleteMany({});
+      } catch (err) {
+        console.log(err);
+        console.error(err);
+      }
+    });
+
+    it("should unlike product when there are no matches yet for the product", async () => {
+      // setting up
+      const userTwoProduct = newProduct({
+        creator: USER_TWO_ID,
+        minPrice: 45,
+        maxPrice: 55,
+      });
+
+      const createUserTwoProduct = await request(app)
+        .post("/api/products")
+        .auth(USER_TWO_TOKEN, { type: "bearer" })
+        .send(userTwoProduct);
+
+      const userTwoProductId = createUserTwoProduct.body.product._id;
+
+      await request(app)
+        .patch(`/api/products/like/${userTwoProductId}`)
+        .auth(USER_ONE_TOKEN, { type: "bearer" })
+        .send({ userId: USER_ONE_ID });
+
+      // check that like document is created
+      expect(
+        await Like.exists({
+          productId: userTwoProductId,
+          userId: USER_ONE_ID,
+        })
+      ).to.be.true;
+
+      // send unlike product
+      const unlikeUserTwoProdRes = await request(app)
+        .patch(`/api/products/unlike/${userTwoProductId}`)
+        .auth(USER_ONE_TOKEN, { type: "bearer" })
+        .send({ userId: USER_ONE_ID });
+
+      expect(unlikeUserTwoProdRes.status).to.be.eql(200);
+
+      // check that like document is deleted
+      expect(
+        await Like.exists({
+          productId: userTwoProductId,
+          userId: USER_ONE_ID,
+        })
+      ).to.be.false;
+    });
+
+    it("should unlike product and remove all matches from matches collection and matchIds from product matches array", async () => {
+      // setting up
+      const userOneProduct = newProduct({
+        creator: USER_ONE_ID,
+        minPrice: 40,
+        maxPrice: 50,
+      });
+      const userTwoProduct = newProduct({
+        creator: USER_TWO_ID,
+        minPrice: 45,
+        maxPrice: 55,
+      });
+
+      const createUserOneProduct = await request(app)
+        .post("/api/products")
+        .auth(USER_ONE_TOKEN, { type: "bearer" })
+        .send(userOneProduct);
+
+      const createUserTwoProduct = await request(app)
+        .post("/api/products")
+        .auth(USER_TWO_TOKEN, { type: "bearer" })
+        .send(userTwoProduct);
+
+      const userOneProductId = createUserOneProduct.body.product._id;
+      const userTwoProductId = createUserTwoProduct.body.product._id;
+
+      await request(app)
+        .patch(`/api/products/like/${userTwoProductId}`)
+        .auth(USER_ONE_TOKEN, { type: "bearer" })
+        .send({ userId: USER_ONE_ID });
+
+      await request(app)
+        .patch(`/api/products/like/${userOneProductId}`)
+        .auth(USER_TWO_TOKEN, { type: "bearer" })
+        .send({ userId: USER_TWO_ID });
+
+      // check that match is created
+      let x = await Match.exists({
+        productOneId: userOneProductId,
+        productTwoId: userTwoProductId,
+      });
+      let y = await Match.exists({
+        productOneId: userTwoProductId,
+        productTwoId: userOneProductId,
+      });
+      expect(x || y).to.be.true;
+
+      // unlike
+      const unlikeUserTwoProdRes = await request(app)
+        .patch(`/api/products/unlike/${userTwoProductId}`)
+        .auth(USER_ONE_TOKEN, { type: "bearer" })
+        .send({ userId: USER_ONE_ID });
+
+      expect(unlikeUserTwoProdRes.status).to.be.eql(200);
+
+      // check that match is deleted
+      x = await Match.exists({
+        productOneId: userOneProductId,
+        productTwoId: userTwoProductId,
+      });
+      y = await Match.exists({
+        productOneId: userTwoProductId,
+        productTwoId: userOneProductId,
+      });
+      expect(x || y).to.be.false;
+
+      // check that match is removed from matches array of both products (just check that no more matches)
+      const getProductOneRes = await request(app).get(
+        `/api/products/${userOneProductId}`
+      );
+      const getProductTwoRes = await request(app).get(
+        `/api/products/${userTwoProductId}`
+      );
+
+      expect(getProductOneRes.body.product.matches).to.be.empty;
+      expect(getProductTwoRes.body.product.matches).to.be.empty;
+    });
+  });
 
   //##############################################//
   //     8. DELETE: /products/{pid} test suite    //
