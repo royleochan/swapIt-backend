@@ -41,9 +41,9 @@ const createReview = async (req, res, next) => {
   const { description, creator, reviewed, rating, matchId, pid } = req.body;
 
   try {
-    const reviews = await Review.find({ creator, matchId });
+    const isReviewExisting = await Review.exists({ creator, matchId });
 
-    if (reviews.length >= 1) {
+    if (isReviewExisting) {
       const error = new HttpError("Review has already been made", 400);
       return next(error);
     }

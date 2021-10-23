@@ -58,6 +58,7 @@ router.use(checkAuth);
  *               - creator
  *               - reviewed
  *               - matchId
+ *               - pid
  *             properties:
  *               description:
  *                 type: string
@@ -74,6 +75,9 @@ router.use(checkAuth);
  *               matchId:
  *                 type: string
  *                 example: matchId
+ *               pid:
+ *                 type: string
+ *                 example: pid
  *     responses:
  *       "201":
  *         description: The newly created review
