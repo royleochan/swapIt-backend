@@ -19,7 +19,7 @@ const productPipeline = require("../controllers/pipelines/products-search");
 
 //----  Controllers ----//
 const getProductById = async (req, res, next) => {
-  const { pid } = req.params;
+  const { pid, uid } = req.params;
 
   try {
     const product = await Product.findById(pid).populate({
@@ -39,6 +39,16 @@ const getProductById = async (req, res, next) => {
       const error = new HttpError("Could not find product for product id", 404);
       return next(error);
     }
+
+    // update user view
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await View.deleteOne({ productId: pid, userId: uid }, { session: sess });
+    await new View({
+      productId: productId,
+      userId: userId,
+    }).save({ session: sess });
+    await sess.commitTransaction();
 
     res.json({
       product: product.toObject({ getters: true }),
@@ -911,92 +921,6 @@ const unlikeProduct = async (req, res, next) => {
   }
 };
 
-const viewProduct = async (req, res, next) => {
-  const { userId } = req.body;
-  const productId = req.params.pid;
-
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-
-    // find product
-    let product;
-    try {
-      product = await Product.findById(productId);
-    } catch (err) {
-      console.log(err);
-      const error = new HttpError(
-          "Something went wrong, could not find product.",
-          500
-      );
-      return next(error);
-    }
-
-    if (!product) {
-      const error = new HttpError("Could not find product for this id.", 404);
-      return next(error);
-    }
-
-    // find user
-    let user;
-    try {
-      user = await User.findById(userId);
-    } catch (err) {
-      console.log(err);
-      const error = new HttpError(
-          "Fetching user failed, please try again later.",
-          500
-      );
-      return next(error);
-    }
-
-    if (!user) {
-      const error = new HttpError("Could not find logged in user", 404);
-      return next(error);
-    }
-
-    // find view document and delete it
-    let viewToFind;
-    try {
-      viewToFind = await View.findOne({ userId: userId, productId: productId });
-      if (viewToFind) {
-        await View.deleteOne({ _id: viewToFind._id });
-      }
-    } catch (err) {
-      console.log(err);
-      const error = new HttpError(
-          "Something went wrong, please try again later.",
-          500
-      );
-      return next(error);
-    }
-
-    // create view document
-    try {
-      await new View({
-        productId: productId,
-        userId: userId,
-      }).save({ session: sess });
-    } catch (err) {
-      console.log(err);
-      const error = new HttpError(
-          "Failed to view item, please try again later.",
-          500
-      );
-      return next(error);
-    }
-    await sess.commitTransaction();
-
-    res.status(200).json({
-      message: "Viewed Product",
-    });
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError("Something went wrong.", 500);
-    return next(error);
-  }
-};
-
 exports.getProductById = getProductById;
 exports.getProductsByUserId = getProductsByUserId;
 exports.getAllFollowingProducts = getAllFollowingProducts;
@@ -1009,4 +933,3 @@ exports.likeProduct = likeProduct;
 exports.unlikeProduct = unlikeProduct;
 exports.getLikedProducts = getLikedProducts;
 exports.viewProduct = viewProduct;
-
