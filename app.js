@@ -37,8 +37,8 @@ if (!isTesting) {
     console.log("Server listening on port: %s", port);
   });
 
-  // set timeout for requests to be 6 seconds
-  server.setTimeout(6000);
+  // set timeout for requests to be 20 seconds
+  server.setTimeout(20000);
 }
 
 // start chat socket
