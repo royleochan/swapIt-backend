@@ -78,8 +78,10 @@ userSchema.methods.getReviewRating = async function () {
   const userId = this._id;
   const reviews = await Review.find({ reviewed: userId });
 
-  //TODO: calculate review rating
-  return 0;
+  const reviewRating =
+    reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length;
+
+  return reviewRating;
 };
 
 userSchema.methods.getProducts = async function () {

@@ -180,7 +180,7 @@ describe("Reviews Acceptance Tests", () => {
   //##########################$$$$$$############//
   //     2. GET: /reviews/{uid} test suite      //
   //################################$$$$$$######//
-  describe.only("POST: /reviews", () => {
+  describe.only("GET: /reviews/{uid}", () => {
     // after test suite, cleanup
     after(async () => {
       try {
@@ -256,12 +256,18 @@ describe("Reviews Acceptance Tests", () => {
       );
 
       expect(getReviewForUserRes.status).to.be.eql(200);
+      expect(getReviewForUserRes.body.reviewRating).to.be.eql(
+        newReview().rating
+      );
       expect(getReviewForUserRes.body.reviews[0].creator.name).to.be.eql(
         USER_ONE.name
       );
       expect(getReviewForUserRes.body.reviews[0].creator.profilePic).to.be.eql(
         USER_ONE.profilePic
       );
+
+      const getUserRes = await request(app).get(`/api/users/${USER_TWO_ID}`);
+      expect(getUserRes.body.user.reviewRating).to.be.eql(newReview().rating);
     });
   });
 });

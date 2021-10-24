@@ -29,7 +29,10 @@ const getReviewsByUserId = async (req, res, next) => {
     return next(error);
   }
 
-  res.json({ reviews: reviews });
+  const reviewRating =
+    reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length;
+
+  res.json({ reviews: reviews, reviewRating });
 };
 
 const createReview = async (req, res, next) => {
