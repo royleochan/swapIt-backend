@@ -8,6 +8,7 @@ const sendPushNotification = require("../services/pushNotification");
 //----  Models Imports ----//
 const HttpError = require("../models/http-error");
 const Like = require("../models/like");
+const View = require("../models/view");
 const Match = require("../models/match");
 const Product = require("../models/product");
 const User = require("../models/user");
@@ -18,7 +19,7 @@ const productPipeline = require("../controllers/pipelines/products-search");
 
 //----  Controllers ----//
 const getProductById = async (req, res, next) => {
-  const { pid } = req.params;
+  const { pid, uid } = req.params;
 
   try {
     const product = await Product.findById(pid).populate({
@@ -38,6 +39,16 @@ const getProductById = async (req, res, next) => {
       const error = new HttpError("Could not find product for product id", 404);
       return next(error);
     }
+
+    // update user view
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await View.deleteOne({ productId: pid, userId: uid }, { session: sess });
+    await new View({
+      productId: productId,
+      userId: userId,
+    }).save({ session: sess });
+    await sess.commitTransaction();
 
     res.json({
       product: product.toObject({ getters: true }),
@@ -721,3 +732,4 @@ exports.deleteProduct = deleteProduct;
 exports.likeProduct = likeProduct;
 exports.unlikeProduct = unlikeProduct;
 exports.getLikedProducts = getLikedProducts;
+exports.viewProduct = viewProduct;

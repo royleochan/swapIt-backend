@@ -12,7 +12,7 @@ const router = express.Router();
 /**
  * @swagger
  *
- * /products/{pid}:
+ * /products/{pid}/{uid}:
  *   get:
  *     summary: Retrieves a product
  *     tags: [Products]
@@ -23,11 +23,17 @@ const router = express.Router();
  *           type: string
  *         required: true
  *         description: id of the product
+ *       - in: path
+ *         name: uid
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: id of the user viewing the product
  *     responses:
  *       "200":
  *         description: A product with relevant fields populated
  */
-router.get("/:pid", productsControllers.getProductById);
+router.get("/:pid/:uid", productsControllers.getProductById);
 
 /**
  * @swagger
