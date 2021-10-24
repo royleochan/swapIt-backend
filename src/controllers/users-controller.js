@@ -14,10 +14,13 @@ const getUserById = async (req, res, next) => {
 
   try {
     const user = await User.findById(uid).select("-password");
+    const reviewData = await user.getReviewRating();
+    const { reviewRating, numReviews } = reviewData;
     res.json({
       user: {
         ...user.toObject({ getters: true }),
-        reviewRating: await user.getReviewRating(),
+        reviewRating,
+        numReviews,
         products: await user.getProducts(),
       },
     });

@@ -83,7 +83,7 @@ userSchema.methods.getReviewRating = async function () {
       ? reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length
       : 0;
 
-  return reviewRating;
+  return { reviewRating, numReviews: reviews.length };
 };
 
 userSchema.methods.getProducts = async function () {
