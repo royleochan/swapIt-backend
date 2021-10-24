@@ -14,6 +14,7 @@ const Product = require("../../../src/models/product");
 const Notification = require("../../../src/models/notification");
 const Like = require("../../../src/models/like");
 const Match = require("../../../src/models/match");
+const View = require("../../../src/models/view.js");
 
 // Tests //
 describe("Products Acceptance Tests", () => {
@@ -75,6 +76,7 @@ describe("Products Acceptance Tests", () => {
         await Like.deleteMany({});
         await Match.deleteMany({});
         await Notification.deleteMany({});
+        await View.deleteMany({});
       } catch (err) {
         console.log(err);
         console.error(err);
@@ -92,7 +94,7 @@ describe("Products Acceptance Tests", () => {
       const productId = createProductRes.body.product._id;
 
       const getProductRes = await request(app).get(
-        `/api/products/${productId}`
+        `/api/products/${productId}/${USER_TWO_ID}`
       );
 
       expect(getProductRes.status).to.be.eql(200);
@@ -138,7 +140,7 @@ describe("Products Acceptance Tests", () => {
         .send({ userId: USER_TWO_ID });
 
       const getProductRes = await request(app).get(
-        `/api/products/${userOneProductId}`
+        `/api/products/${userOneProductId}/${USER_TWO_ID}`
       );
 
       expect(getProductRes.status).to.be.eql(200);
@@ -160,6 +162,7 @@ describe("Products Acceptance Tests", () => {
         await Like.deleteMany({});
         await Match.deleteMany({});
         await Notification.deleteMany({});
+        await View.deleteMany({});
       } catch (err) {
         console.log(err);
         console.error(err);
@@ -207,6 +210,7 @@ describe("Products Acceptance Tests", () => {
         await Like.deleteMany({});
         await Match.deleteMany({});
         await Notification.deleteMany({});
+        await View.deleteMany({});
       } catch (err) {
         console.log(err);
         console.error(err);
@@ -357,6 +361,7 @@ describe("Products Acceptance Tests", () => {
         await Like.deleteMany({});
         await Match.deleteMany({});
         await Notification.deleteMany({});
+        await View.deleteMany({});
       } catch (err) {
         console.log(err);
         console.error(err);
@@ -430,10 +435,10 @@ describe("Products Acceptance Tests", () => {
 
       // check that match is added to matches array of both products (check not empty)
       const getProductOneRes = await request(app).get(
-        `/api/products/${userOneProductId}`
+        `/api/products/${userOneProductId}/${USER_TWO_ID}`
       );
       const getProductTwoRes = await request(app).get(
-        `/api/products/${userTwoProductId}`
+        `/api/products/${userTwoProductId}/${USER_ONE_ID}`
       );
 
       expect(getProductOneRes.body.product.matches).to.be.not.empty;
@@ -577,6 +582,7 @@ describe("Products Acceptance Tests", () => {
         await Like.deleteMany({});
         await Match.deleteMany({});
         await Notification.deleteMany({});
+        await View.deleteMany({});
       } catch (err) {
         console.log(err);
         console.error(err);
@@ -696,10 +702,10 @@ describe("Products Acceptance Tests", () => {
 
       // check that match is removed from matches array of both products (just check that no more matches)
       const getProductOneRes = await request(app).get(
-        `/api/products/${userOneProductId}`
+        `/api/products/${userOneProductId}/${USER_TWO_ID}`
       );
       const getProductTwoRes = await request(app).get(
-        `/api/products/${userTwoProductId}`
+        `/api/products/${userTwoProductId}/${USER_ONE_ID}`
       );
 
       expect(getProductOneRes.body.product.matches).to.be.empty;
@@ -718,6 +724,7 @@ describe("Products Acceptance Tests", () => {
         await Like.deleteMany({});
         await Match.deleteMany({});
         await Notification.deleteMany({});
+        await View.deleteMany({});
       } catch (err) {
         console.log(err);
         console.error(err);
@@ -766,7 +773,7 @@ describe("Products Acceptance Tests", () => {
         .auth(USER_ONE_TOKEN, { type: "bearer" });
 
       const getProductRes = await request(app).get(
-        `/api/products/${userOneProductId}`
+        `/api/products/${userOneProductId}/${USER_TWO_ID}`
       );
 
       expect(deleteProductRes.status).to.be.eql(200);
@@ -848,7 +855,7 @@ describe("Products Acceptance Tests", () => {
         .auth(USER_ONE_TOKEN, { type: "bearer" });
 
       const getProductRes = await request(app).get(
-        `/api/products/${userOneProductId}`
+        `/api/products/${userOneProductId}/${USER_TWO_ID}`
       );
 
       expect(deleteProductRes.status).to.be.eql(200);

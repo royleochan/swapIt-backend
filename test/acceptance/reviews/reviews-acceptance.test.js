@@ -19,6 +19,7 @@ const Notification = require("../../../src/models/notification");
 const Like = require("../../../src/models/like");
 const Match = require("../../../src/models/match");
 const Review = require("../../../src/models/review");
+const View = require("../../../src/models/view");
 
 // Tests //
 describe("Reviews Acceptance Tests", () => {
@@ -64,7 +65,7 @@ describe("Reviews Acceptance Tests", () => {
   //######################$################//
   //     1. POST: /reviews test suite      //
   //######################$################//
-  describe.only("POST: /reviews", () => {
+  describe("POST: /reviews", () => {
     // after test suite, cleanup
     after(async () => {
       try {
@@ -116,7 +117,7 @@ describe("Reviews Acceptance Tests", () => {
         .send({ userId: USER_TWO_ID });
 
       const getProductRes = await request(app).get(
-        `/api/products/${userOneProductId}`
+        `/api/products/${userOneProductId}/${USER_TWO_ID}`
       );
 
       const matchId = getProductRes.body.product.matches[0].match.id;
@@ -180,15 +181,16 @@ describe("Reviews Acceptance Tests", () => {
   //##########################$$$$$$############//
   //     2. GET: /reviews/{uid} test suite      //
   //################################$$$$$$######//
-  describe.only("GET: /reviews/{uid}", () => {
+  describe("GET: /reviews/{uid}", () => {
     // after test suite, cleanup
     after(async () => {
       try {
-        // await Product.deleteMany({});
-        // await Like.deleteMany({});
-        // await Match.deleteMany({});
-        // await Notification.deleteMany({});
-        // await Review.deleteMany({});
+        await Product.deleteMany({});
+        await Like.deleteMany({});
+        await Match.deleteMany({});
+        await Notification.deleteMany({});
+        await Review.deleteMany({});
+        await View.deleteMany({});
       } catch (err) {
         console.log(err);
         console.error(err);
@@ -232,7 +234,7 @@ describe("Reviews Acceptance Tests", () => {
         .send({ userId: USER_TWO_ID });
 
       const getProductRes = await request(app).get(
-        `/api/products/${userOneProductId}`
+        `/api/products/${userOneProductId}/${USER_TWO_ID}`
       );
 
       const matchId = getProductRes.body.product.matches[0].match.id;

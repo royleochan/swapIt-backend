@@ -30,7 +30,9 @@ const getReviewsByUserId = async (req, res, next) => {
   }
 
   const reviewRating =
-    reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length;
+    reviews.length > 0
+      ? reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length
+      : 0;
 
   res.json({ reviews: reviews, reviewRating });
 };

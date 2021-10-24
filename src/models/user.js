@@ -79,7 +79,9 @@ userSchema.methods.getReviewRating = async function () {
   const reviews = await Review.find({ reviewed: userId });
 
   const reviewRating =
-    reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length;
+    reviews.length > 0
+      ? reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length
+      : 0;
 
   return reviewRating;
 };

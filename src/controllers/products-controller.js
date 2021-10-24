@@ -45,8 +45,8 @@ const getProductById = async (req, res, next) => {
     sess.startTransaction();
     await View.deleteOne({ productId: pid, userId: uid }, { session: sess });
     await new View({
-      productId: productId,
-      userId: userId,
+      productId: pid,
+      userId: uid,
     }).save({ session: sess });
     await sess.commitTransaction();
 
@@ -732,4 +732,3 @@ exports.deleteProduct = deleteProduct;
 exports.likeProduct = likeProduct;
 exports.unlikeProduct = unlikeProduct;
 exports.getLikedProducts = getLikedProducts;
-exports.viewProduct = viewProduct;

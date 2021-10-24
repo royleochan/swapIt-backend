@@ -12,6 +12,50 @@ const router = express.Router();
 /**
  * @swagger
  *
+ * /products/likedProducts/{uid}:
+ *   get:
+ *     summary: Retrieves an array of products which the user has liked
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: User id of the logged in user
+ *     responses:
+ *       "200":
+ *         description: An array of products which the user has liked
+ */
+router.get("/likedProducts/:uid", productsControllers.getLikedProducts);
+
+/**
+ * @swagger
+ *
+ * /products/category/{filterCategory}:
+ *   get:
+ *     summary: Retrieves an array of products belonging to a category
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: filterCategory
+ *         example: Men's Tops
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Category of product, takes a set of enum values.
+ *     responses:
+ *       "200":
+ *         description: An array of products belonging to a category
+ */
+router.get(
+  "/category/:filterCategory",
+  productsControllers.getCategoryProducts
+);
+
+/**
+ * @swagger
+ *
  * /products/{pid}/{uid}:
  *   get:
  *     summary: Retrieves a product
@@ -73,50 +117,6 @@ router.get("/search/title", productsControllers.searchForProducts);
  *         description: An array of products with relevant fields populated
  */
 router.get("/all/:uid", productsControllers.getAllFollowingProducts);
-
-/**
- * @swagger
- *
- * /products/likedProducts/{uid}:
- *   get:
- *     summary: Retrieves an array of products which the user has liked
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: uid
- *         schema:
- *           type: string
- *         required: true
- *         description: User id of the logged in user
- *     responses:
- *       "200":
- *         description: An array of products which the user has liked
- */
-router.get("/likedProducts/:uid", productsControllers.getLikedProducts);
-
-/**
- * @swagger
- *
- * /products/category/{filterCategory}:
- *   get:
- *     summary: Retrieves an array of products belonging to a category
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: filterCategory
- *         example: Men's Tops
- *         schema:
- *           type: string
- *         required: true
- *         description: Category of product, takes a set of enum values.
- *     responses:
- *       "200":
- *         description: An array of products belonging to a category
- */
-router.get(
-  "/category/:filterCategory",
-  productsControllers.getCategoryProducts
-);
 
 // ---------------------------------------- //
 //         Authenticate Routes Below        //
