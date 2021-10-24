@@ -306,37 +306,6 @@ router.patch("/like/:pid", productsControllers.likeProduct);
  */
 router.patch("/unlike/:pid", productsControllers.unlikeProduct);
 
-/**
- * @swagger
- *
- * /products/view/{pid}:
- *   patch:
- *     summary: View product with pid
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: pid
- *         schema:
- *           type: string
- *         required: true
- *         description: product id of the target product
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - userId
- *             properties:
- *               userId:
- *                 type: string
- *                 description: user id of logged in user
- *     responses:
- *       "200":
- *         description: Viewed product
- */
-router.patch("/view/:pid", productsControllers.viewProduct);
-
 // ------------------------------ //
 //         DELETE REQUESTS        //
 // ------------------------------ //
