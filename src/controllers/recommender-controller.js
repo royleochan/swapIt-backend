@@ -105,7 +105,7 @@ const getRecommendedUsers = async (req, res, next) => {
         top_20_similar.push(ele);
       }
     }
-    res.json(top_20_similar);
+    res.json({ data: top_20_similar });
   } catch (err) {
     console.log(err);
     const error = new HttpError("Could not generate recommended users.", 404);
@@ -192,7 +192,7 @@ const getRecommendedProducts = async (req, res, next) => {
     const top_20_similar = Object.keys(item_scores)
       .sort((x, y) => item_scores[y] - item_scores[x])
       .slice(0, 20);
-    res.json(top_20_similar);
+    res.json({ data: top_20_similar });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
