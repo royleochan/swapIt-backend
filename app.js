@@ -18,21 +18,28 @@ const notificationsRoutes = require("./src/routes/notifications-routes");
 const reportsRoutes = require("./src/routes/reports-routes");
 const otpRoutes = require("./src/routes/otp-routes");
 
+require("dotenv").config();
+const isTesting = process.env.NODE_ENV === "testing";
+
 // create server
 const app = express();
-const port = process.env.PORT || 5000;
+exports.app = app;
+const port = isTesting ? 9000 : process.env.PORT || 5000;
 
 // setup swagger
 const specs = swaggerJsdoc(swaggerDocument);
 app.use("/index", swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
 
 // start server
-const server = app.listen(port, () => {
-  console.log("Server listening on port: %s", port);
-});
+let server;
+if (!isTesting) {
+  server = app.listen(port, () => {
+    console.log("Server listening on port: %s", port);
+  });
 
-// set timeout for requests to be 6 seconds
-server.setTimeout(6000);
+  // set timeout for requests to be 20 seconds
+  server.setTimeout(20000);
+}
 
 // start chat socket
 const io = socketio(server);
@@ -40,7 +47,9 @@ const chatSocket = io.of("/chatSocket");
 require("./src/services/chatSocket")(chatSocket);
 
 // setup logging
-app.use(morgan("dev"));
+if (!isTesting) {
+  app.use(morgan("dev"));
+}
 
 // log errors
 app.use((error, req, res, next) => {
@@ -82,7 +91,11 @@ app.use((error, req, res, next) => {
 // connect to MongoDB
 mongoose
   .connect(
-    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.cqmho.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
+    `mongodb+srv://${process.env.DB_USER}:${
+      process.env.DB_PASSWORD
+    }@cluster0.cqmho.mongodb.net/${
+      isTesting ? process.env.TEST_DB_NAME : process.env.DB_NAME
+    }?retryWrites=true&w=majority`,
     {
       useFindAndModify: false,
       useUnifiedTopology: true,

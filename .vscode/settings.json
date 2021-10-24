@@ -1,0 +1,6 @@
+{
+  "mochaExplorer.timeout": 10000,
+  "mochaExplorer.env": {
+    "NODE_ENV": "testing"
+  }
+}

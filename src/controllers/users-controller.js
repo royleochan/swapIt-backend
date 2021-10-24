@@ -6,37 +6,21 @@ const mongoose = require("mongoose");
 const sendPushNotification = require("../services/pushNotification");
 const HttpError = require("../models/http-error");
 const User = require("../models/user");
-const Product = require("../models/product");
 const Notification = require("../models/notification");
 const userPipeline = require("../controllers/pipelines/user-search");
-
-const getLikedUsers = async (req, res, next) => {
-  const { pid } = req.params;
-
-  try {
-    const result = await Product.findById(pid, "likes").populate({
-      path: "likes",
-      select: "userid",
-      populate: {
-        path: "userId",
-      },
-    });
-    res.json({ users: result.likes.map((data) => data.userId) });
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError("Could not find users", 404);
-    return next(error);
-  }
-};
 
 const getUserById = async (req, res, next) => {
   const { uid } = req.params;
 
   try {
-    const user = await User.findById(uid)
-      .select("-password")
-      .populate("products");
-    res.json({ user: user.toObject({ getters: true }) });
+    const user = await User.findById(uid).select("-password");
+    res.json({
+      user: {
+        ...user.toObject({ getters: true }),
+        reviewRating: await user.getReviewRating(),
+        products: await user.getProducts(),
+      },
+    });
   } catch (err) {
     console.log(err);
     const error = new HttpError("Could not find user.", 404);
@@ -162,12 +146,10 @@ const signup = async (req, res, next) => {
       ...(description !== undefined && { description }),
       ...(location !== undefined && { location }),
       password: hashedPassword,
-      products: [],
       likes: [],
       followers: [],
       following: [],
       chats: [],
-      notifications: [],
     });
     await createdUser.save();
 
@@ -208,7 +190,11 @@ const login = async (req, res, next) => {
     token = jwt.sign({ user: existingUser }, `${process.env.JWT_SECRET_KEY}`);
 
     res.status(200).json({
-      user: existingUser.toObject({ getters: true }),
+      user: {
+        ...existingUser.toObject({ getters: true }),
+        reviewRating: await existingUser.getReviewRating(),
+        products: await existingUser.getProducts(),
+      },
       token: token,
     });
   } catch (err) {
@@ -262,7 +248,13 @@ const updateUser = async (req, res, next) => {
   try {
     await user.save();
 
-    res.status(200).json({ user: user.toObject({ getters: true }) });
+    res.status(200).json({
+      user: {
+        ...user.toObject({ getters: true }),
+        reviewRating: await user.getReviewRating(),
+        products: await user.getProducts(),
+      },
+    });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
@@ -308,8 +300,6 @@ const followUser = async (req, res, next) => {
         isRead: false,
       });
       await notification.save({ session: sess });
-      targetUser.notifications.push(notification._id);
-
       await loggedInUser.save({ session: sess });
       await targetUser.save({ session: sess });
       await sess.commitTransaction();
@@ -383,7 +373,7 @@ const updatePushToken = async (req, res, next) => {
 
   let user;
   try {
-    user = await User.findById(userId).populate("products");
+    user = await User.findById(userId);
   } catch (err) {
     console.log(err);
     const error = new HttpError("Could not find user.", 404);
@@ -394,7 +384,13 @@ const updatePushToken = async (req, res, next) => {
 
   try {
     await user.save();
-    res.status(200).json({ user: user.toObject({ getters: true }) });
+    res.status(200).json({
+      user: {
+        ...user.toObject({ getters: true }),
+        reviewRating: await user.getReviewRating(),
+        products: await user.getProducts(),
+      },
+    });
   } catch (err) {
     console.log(err);
     const error = new HttpError("Failed to update push token.", 500);
@@ -463,7 +459,6 @@ const updatePassword = async (req, res, next) => {
   }
 };
 
-exports.getLikedUsers = getLikedUsers;
 exports.getUserById = getUserById;
 exports.getFollowingUsers = getFollowingUsers;
 exports.getFollowersUsers = getFollowersUsers;

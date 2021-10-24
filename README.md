@@ -8,24 +8,7 @@ Ensure you have [node](https://nodejs.org/en/download/) installed together with 
 
 ## Usage
 
-1. Create a nodemon.json file in the root of the app containing the env variables
-
-```javascript
-{
-  "env": {
-    "DB_USER": <>,
-    "DB_PASSWORD": <>,
-    "DB_NAME": <>,
-    "JWT_SECRET_KEY": <>,
-    "AWS_ACCESS_KEY_ID": <>,
-    "AWS_SECRET_KEY": <>,
-    "SWAPIT_EMAIL_ADDR": <>,
-    "SWAPIT_EMAIL_PASS": <>,
-    "OTP_SECRET_KEY": <>
-  }
-}
-
-```
+1. Create a .env file in the root of the app containing the env variables as stipulated in env_sample.txt
 
 2. Install dependencies
 
@@ -49,6 +32,20 @@ npm run dev
 - For queries that require authentication, first send a post login request to obtain a valid jwt token. Then copy the jwt token into the authorize box on swagger. After which you will be successfully authenticated and can run all requests
   
 ![Imgur](https://i.imgur.com/SMEzUJr.png)
+
+## Testing
+
+Acceptance tests are done on a test database using mocha, chai and supertest on port 9000.
+
+- Running all tests
+
+```
+npm run test
+```
+
+- Alternatively, install the **mocha test explorer** vscode sidebar extension and run tests from the test sidebar
+
+![img](https://i.imgur.com/P3pvoaP.png)
 
 ## Deployment
 

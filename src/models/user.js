@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
+const Review = require("./review");
+const Product = require("./product");
 
 const { Schema } = mongoose;
 
@@ -42,12 +44,8 @@ const { Schema } = mongoose;
  *          location:
  *            type: string
  *            description: Up to 60 characters.
- *          reviewRating:
- *            type: number
  *          products:
  *            type: array[productId]
- *          reviews:
- *            type: array[reviewId]
  *          likes:
  *            type: array[likeId]
  *          followers:
@@ -56,8 +54,6 @@ const { Schema } = mongoose;
  *            type: array[userId]
  *          chats:
  *            type: array[chatId]
- *          notifications:
- *            type: array[notificationId]
  */
 const userSchema = new Schema(
   {
@@ -70,21 +66,30 @@ const userSchema = new Schema(
     profilePic: { type: String, default: "https://i.imgur.com/tiRSkS8.jpg" },
     description: { type: String, default: "" },
     location: { type: String, default: "" },
-    products: [
-      { type: mongoose.Types.ObjectId, required: true, ref: "Product" },
-    ],
-    reviewRating: { type: Number, default: 0 },
-    reviews: [{ type: mongoose.Types.ObjectId, required: true, ref: "Review" }],
-    likes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Like" }],
     followers: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     following: [{ type: mongoose.Types.ObjectId, required: true, ref: "User" }],
     chats: [{ type: mongoose.Types.ObjectId, required: true, ref: "Chat" }],
-    notifications: [
-      { type: mongoose.Types.ObjectId, required: true, ref: "Notification" },
-    ],
   },
   { timestamps: true }
 );
+
+// Methods //
+userSchema.methods.getReviewRating = async function () {
+  const userId = this._id;
+  const reviews = await Review.find({ reviewed: userId });
+
+  const reviewRating =
+    reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length;
+
+  return reviewRating;
+};
+
+userSchema.methods.getProducts = async function () {
+  const userId = this._id;
+  const products = await Product.find({ creator: userId });
+
+  return products;
+};
 
 userSchema.plugin(uniqueValidator);
 module.exports = mongoose.model("User", userSchema);

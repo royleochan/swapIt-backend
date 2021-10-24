@@ -1,0 +1,13 @@
+{
+  "NODE_ENV": "development",
+  "DB_USER": "",
+  "DB_PASSWORD": "",
+  "DB_NAME": "",
+  "TEST_DB_NAME": "",
+  "JWT_SECRET_KEY": "",
+  "AWS_ACCESS_KEY_ID": "",
+  "AWS_SECRET_KEY": "",
+  "SWAPIT_EMAIL_ADDR": "",
+  "SWAPIT_EMAIL_PASS": "",
+  "OTP_SECRET_KEY": ""
+}

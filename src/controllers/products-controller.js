@@ -49,57 +49,18 @@ const getProductById = async (req, res, next) => {
   }
 };
 
-const getProductsByUserId = async (req, res, next) => {
-  const { uid } = req.params;
-
-  let userWithProducts;
-  try {
-    userWithProducts = await User.findById(uid).populate({
-      path: "products",
-      populate: { path: "creator" },
-    });
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Fetching products failed, please try again later",
-      500
-    );
-    return next(error);
-  }
-
-  if (!userWithProducts) {
-    const error = new HttpError("Could not find products for user id", 404);
-    return next(error);
-  }
-
-  res.json({
-    products: userWithProducts.products.map((product) =>
-      product.toObject({ getters: true })
-    ),
-  });
-};
-
 const getAllFollowingProducts = async (req, res, next) => {
   const { uid } = req.params;
 
   let following;
   let followingProducts;
   try {
-    following = await User.findById(uid, "following").populate({
-      path: "following",
-      select: "products -_id",
-      populate: {
-        path: "products",
-        match: { isSwapped: false },
-        populate: { path: "creator" },
-      },
-    });
-    followingProducts = following.following
-      .map((user) => user.products)
-      .flat()
-      .sort((a, b) => {
-        return b.createdAt - a.createdAt;
-      });
+    let getFollowing = await User.findById(uid, "following");
+    following = getFollowing.following;
+    followingProducts = await Product.find({
+      creator: { $in: following },
+      isSwapped: false,
+    }).sort({ createdAt: -1 });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
@@ -152,12 +113,11 @@ const getCategoryProducts = async (req, res, next) => {
 const getLikedProducts = async (req, res, next) => {
   const userId = req.params.uid;
 
-  let userWithLikes;
+  let likedProducts;
   try {
-    userWithLikes = await User.findById(userId).populate({
-      path: "likes",
-      select: "productId",
-      populate: { path: "productId", populate: { path: "creator" } },
+    likedProducts = await Like.find({ userId: userId }, "productId").populate({
+      path: "productId",
+      populate: { path: "creator" },
     });
   } catch (err) {
     console.log(err);
@@ -168,7 +128,7 @@ const getLikedProducts = async (req, res, next) => {
     return next(error);
   }
 
-  if (!userWithLikes) {
+  if (!likedProducts) {
     const error = new HttpError(
       "Could not find liked products for user id",
       404
@@ -177,7 +137,7 @@ const getLikedProducts = async (req, res, next) => {
   }
 
   res.json({
-    data: userWithLikes.likes.map((likedProduct) =>
+    data: likedProducts.map((likedProduct) =>
       likedProduct.productId.toObject({ getters: true })
     ),
   });
@@ -219,7 +179,12 @@ const searchForProducts = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    throw new HttpError("Invalid inputs passed, please check your data", 422);
+    const error = new HttpError(
+      "Invalid inputs passed, please check your data",
+      422
+    );
+
+    return next(error);
   }
 
   const {
@@ -244,31 +209,8 @@ const createProduct = async (req, res, next) => {
     matches: [],
   });
 
-  let user;
-
   try {
-    user = await User.findById(creator);
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Creating product failed, please try again.",
-      500
-    );
-    return next(error);
-  }
-
-  if (!user) {
-    const error = new HttpError("Could not find user.", 404);
-    return next(error);
-  }
-
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-    await createdProduct.save({ session: sess });
-    user.products.push(createdProduct);
-    await user.save({ session: sess });
-    await sess.commitTransaction();
+    await createdProduct.save();
   } catch (err) {
     console.log(err);
     const error = new HttpError(
@@ -284,45 +226,25 @@ const createProduct = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    throw new HttpError("Invalid inputs passed, please check your data", 422);
+    const error = new HttpError(
+      "Invalid inputs passed, please check your data",
+      422
+    );
+
+    return next(error);
   }
 
-  const { title, description, imageUrl, category } = req.body;
   const productId = req.params.pid;
 
   let product;
   try {
-    product = await Product.findById(productId);
+    product = await Product.findByIdAndUpdate(productId, req.body, {
+      new: true,
+    });
   } catch (err) {
     console.log(err);
     const error = new HttpError(
       "Something went wrong, could not find the product.",
-      500
-    );
-    return next(error);
-  }
-
-  if (!product) {
-    const error = new HttpError("Could not find product.", 404);
-    return next(error);
-  }
-
-  if (product.isSwapped) {
-    const error = new HttpError("Cannot edit swapped product.", 400);
-    return next(error);
-  }
-
-  product.title = title;
-  product.description = description;
-  product.imageUrl = imageUrl;
-  product.category = category;
-
-  try {
-    await product.save();
-  } catch (err) {
-    console.log(err);
-    const error = new HttpError(
-      "Something went wrong, could not update the product.",
       500
     );
     return next(error);
@@ -336,7 +258,7 @@ const deleteProduct = async (req, res, next) => {
 
   let product;
   try {
-    product = await Product.findById(productId).populate("creator");
+    product = await Product.findById(productId);
   } catch (err) {
     console.log(err);
     const error = new HttpError(
@@ -360,19 +282,14 @@ const deleteProduct = async (req, res, next) => {
       product.isDeleted = true;
       await product.save({ session: sess });
 
-      // remove productId from products array in creator
-      product.creator.products.pull(product);
-      await product.creator.save({ session: sess });
-
-      // remove productId from likes array for all users who liked the product
-      const usersToUpdate = await User.find({ likes: productId });
-      for (const user of usersToUpdate) {
-        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
-        await user.save({ session: sess });
-      }
+      // delete associated likes
+      await Like.deleteMany({ productId: productId }, { session: sess });
     } else {
       // delete product completely from collection
       await product.deleteOne({ session: sess });
+
+      // delete associated likes
+      await Like.deleteMany({ productId: productId }, { session: sess });
 
       // delete associated matches
       await Match.deleteMany(
@@ -392,93 +309,11 @@ const deleteProduct = async (req, res, next) => {
         await product.save({ session: sess });
       }
 
-      // delete associated notifications & remove productId from likes array for all users who liked the product
-      let usersToUpdate = [];
-      const usersToUpdateLikes = new Map();
-      const usersToUpdateNotifications = new Map();
-      const usersToUpdateBoth = new Map();
-
-      const notificationsToRemove = await Notification.find({
-        $or: [{ productId: productId }, { matchedProductId: productId }],
-      });
-      for (const notification of notificationsToRemove) {
-        const notificationId = this._id;
-        usersToUpdate = await User.find({
-          notifications: notificationId,
-        });
-        for (const user of usersToUpdate) {
-          usersToUpdateNotifications.set(user._id.toString(), [
-            user,
-            notificationId,
-          ]);
-        }
-
-        await notification.deleteOne({ session: sess });
-      }
-
-      usersToUpdate = await User.find({ likes: productId });
-
-      for (const user of usersToUpdate) {
-        const userId = user._id.toString();
-        if (usersToUpdateNotifications.has(userId)) {
-          usersToUpdateBoth.set(
-            user._id.toString(),
-            usersToUpdateNotifications.get(userId)
-          );
-
-          usersToUpdateNotifications.delete(userId);
-        } else {
-          usersToUpdateLikes.set(user._id.toString(), user);
-        }
-      }
-
-      const productCreatorId = product.creator._id.toString();
-
-      for (const [uid, user] of usersToUpdateLikes) {
-        if (uid === productCreatorId) {
-          user.products.pull(product);
-        }
-
-        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
-        await user.save({ session: sess });
-      }
-
-      for (const [uid, data] of usersToUpdateNotifications) {
-        const [user, notificationId] = [data];
-
-        if (uid === productCreatorId) {
-          user.products.pull(product);
-        }
-
-        user.notifications = user.notifications.filter(
-          (nid) => nid.toString() !== notificationId.toString()
-        );
-        await user.save({ session: sess });
-      }
-
-      for (const [uid, data] of usersToUpdateBoth) {
-        const [user, notificationId] = data;
-
-        if (uid === productCreatorId) {
-          user.products.pull(product);
-        }
-
-        user.notifications = user.notifications.filter(
-          (nid) => nid.toString() !== notificationId.toString()
-        );
-        user.likes = user.likes.filter((pid) => pid.toString() !== productId);
-        await user.save({ session: sess });
-      }
-
-      // remove productId from products array in creator
-      if (
-        !usersToUpdateLikes.has(productCreatorId) &&
-        !usersToUpdateNotifications.has(productCreatorId) &&
-        !usersToUpdateBoth.has(productCreatorId)
-      ) {
-        product.creator.products.pull(product);
-        await product.creator.save({ session: sess });
-      }
+      // delete associated notifications
+      await Notification.deleteMany(
+        { productId: productId },
+        { session: sess }
+      );
     }
     await sess.commitTransaction();
   } catch (err) {
@@ -504,7 +339,10 @@ const likeProduct = async (req, res, next) => {
     // find product and product creator
     let product;
     try {
-      product = await Product.findById(productId).populate("creator");
+      product = await Product.findById(productId).populate({
+        path: "creator",
+        select: "pushToken",
+      });
     } catch (err) {
       console.log(err);
       const error = new HttpError(
@@ -527,7 +365,7 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    // find user
+    // find user who like the product
     let user;
     try {
       user = await User.findById(userId);
@@ -548,8 +386,8 @@ const likeProduct = async (req, res, next) => {
     // check if item has already been liked
     let likeToFind;
     try {
-      likeToFind = await Like.find({ userId: userId, productId: productId });
-      if (likeToFind.length >= 1) {
+      likeToFind = await Like.findOne({ userId: userId, productId: productId });
+      if (likeToFind) {
         const error = new HttpError("Already liked item.", 400);
         return next(error);
       }
@@ -562,14 +400,12 @@ const likeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    // create like document and push to product and user arrays
+    // create like document
     try {
-      const newLike = await new Like({
+      await new Like({
         productId: productId,
         userId: userId,
       }).save({ session: sess });
-      product.likes.push(newLike);
-      user.likes.push(newLike);
     } catch (err) {
       console.log(err);
       const error = new HttpError(
@@ -580,35 +416,28 @@ const likeProduct = async (req, res, next) => {
     }
 
     // check for matches
-    let creator;
+    let creatorLikedItems;
     try {
-      creator = await User.findById(
-        product.creator,
-        "likes pushToken notifications"
-      ).populate({
-        path: "likes",
-        select: "productId",
-        populate: {
-          path: "productId",
-          select: "minPrice maxPrice allowance creator matches title isSwapped",
+      let getCreatorLikedItems = await Like.find(
+        {
+          userId: product.creator,
         },
+        "productId"
+      ).populate({
+        path: "productId",
+        select: "minPrice maxPrice allowance creator matches title isSwapped",
       });
+      creatorLikedItems = getCreatorLikedItems.map((item) => item.productId);
     } catch (err) {
       console.log(err);
       const error = new HttpError(
-        "Fetching user failed, please try again later.",
+        "Something went wrong, please try again later.",
         500
       );
       return next(error);
     }
 
-    if (!creator) {
-      const error = new HttpError("Could not find product creator.", 404);
-      return next(error);
-    }
-
-    const mappedProducts = creator.likes.map((item) => item.productId);
-    const matchedItems = mappedProducts
+    const matchedItems = creatorLikedItems
       .filter((item) => {
         return (
           item.creator.toString() === user._id.toString() && !item.isSwapped
@@ -659,7 +488,7 @@ const likeProduct = async (req, res, next) => {
 
     // Create Notification For Like
     let notification;
-    const { pushToken } = creator;
+    const { pushToken } = product.creator;
     notificationsToSendToOtherUser.push(
       async () =>
         await sendPushNotification(
@@ -670,14 +499,13 @@ const likeProduct = async (req, res, next) => {
     );
     notification = new Notification({
       creator: userId,
-      targetUser: creator._id,
+      targetUser: product.creator._id,
       productId: product._id,
       description: `${user.name} liked your ${product.title}`,
       type: "LIKE",
       isRead: false,
     });
     await notification.save({ session: sess });
-    creator.notifications.push(notification._id);
 
     // Create Notification(s) For Matches: both ways
     for (let i = 0; i < matchedItems.length; i++) {
@@ -693,7 +521,7 @@ const likeProduct = async (req, res, next) => {
 
       notification = new Notification({
         creator: userId,
-        targetUser: creator._id,
+        targetUser: product.creator._id,
         productId: product._id,
         matchedProductId: matchedItems[i]._id,
         description: `${matchedItems[i].title} matched with your ${product.title}`,
@@ -701,7 +529,6 @@ const likeProduct = async (req, res, next) => {
         isRead: false,
       });
       await notification.save({ session: sess });
-      creator.notifications.push(notification._id);
 
       // To ownself
       notificationsToSendToOwnself.push(
@@ -713,7 +540,7 @@ const likeProduct = async (req, res, next) => {
           )
       );
       notification = new Notification({
-        creator: creator._id,
+        creator: product.creator._id,
         targetUser: userId,
         productId: matchedItems[i]._id,
         matchedProductId: product._id,
@@ -722,12 +549,9 @@ const likeProduct = async (req, res, next) => {
         isRead: false,
       });
       await notification.save({ session: sess });
-      user.notifications.push(notification._id);
     }
 
-    await creator.save({ session: sess });
     await product.save({ session: sess });
-    await user.save({ session: sess });
     await sess.commitTransaction();
 
     // Send Notifications to other user: can fail
@@ -779,33 +603,10 @@ const unlikeProduct = async (req, res, next) => {
   const { userId } = req.body;
   const productId = req.params.pid;
 
+  const sess = await mongoose.startSession();
+  sess.startTransaction();
+
   try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-
-    // find like document and delete it
-    let likeToFind;
-    try {
-      let likes = await Like.find({ userId: userId, productId: productId });
-      if (likes.length <= 0) {
-        const error = new HttpError(
-          "Cannot unlike item that you have not liked yet, please try again later.",
-          404
-        );
-        return next(error);
-      } else {
-        likeToFind = likes[0];
-        await Like.deleteOne({ _id: likeToFind._id });
-      }
-    } catch (err) {
-      console.log(err);
-      const error = new HttpError(
-        "Something went wrong, please try again later.",
-        500
-      );
-      return next(error);
-    }
-
     // find product that has been unliked and filter away all matches with the user's items
     let product;
     try {
@@ -818,7 +619,7 @@ const unlikeProduct = async (req, res, next) => {
 
       if (product.isSwapped) {
         const error = new HttpError(
-          "Cannot unlike product that has already been swapped",
+          "Cannot unlike item that has already been swapped.",
           400
         );
         return next(error);
@@ -830,10 +631,12 @@ const unlikeProduct = async (req, res, next) => {
         (match) => match.product.creator.toString() === userId.toString()
       );
       for (let i = 0; i < unmatchedProductsMatches.length; i++) {
-        let matchToDelete = await Match.findById(
-          unmatchedProductsMatches[i].match
+        await Match.findOneAndDelete(
+          { _id: unmatchedProductsMatches[i].match },
+          {
+            session: sess,
+          }
         );
-        await matchToDelete.deleteOne({ session: sess });
       }
 
       // remove relevant matchIds from matches array of unliked product
@@ -843,8 +646,6 @@ const unlikeProduct = async (req, res, next) => {
       );
       product.matches = newMatchedProductsMatches;
 
-      // remove like from likes array of the unliked product
-      product.likes.pull(likeToFind);
       await product.save({ session: sess });
     } catch (err) {
       console.log(err);
@@ -852,24 +653,16 @@ const unlikeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    if (!product) {
-      const error = new HttpError("Could not find product for this id", 404);
-      return next(error);
-    }
-
     // find user who unliked the product and remove all matches of his products with unliked product
-    let user;
     try {
-      user = await User.findById(userId).populate("products", {
-        matches: 1,
-      });
-      for (i = 0; i < user.products.length; i++) {
-        let newMatchedProductsMatches = user.products[i].matches.filter(
+      let userProducts = await Product.find({ creator: userId }, "matches");
+      for (i = 0; i < userProducts.length; i++) {
+        let newMatchedProductsMatches = userProducts[i].matches.filter(
           (match) => match.product.toString() !== productId.toString()
         );
-        user.products[i].matches = newMatchedProductsMatches;
+        userProducts[i].matches = newMatchedProductsMatches;
         try {
-          await user.products[i].save({ session: sess });
+          await userProducts[i].save({ session: sess });
         } catch (err) {
           console.log(err);
           const error = new HttpError(
@@ -879,11 +672,6 @@ const unlikeProduct = async (req, res, next) => {
           return next(error);
         }
       }
-
-      // remove like id from user likes array
-      user.likes.pull(likeToFind);
-
-      await user.save({ session: sess });
     } catch (err) {
       console.log(err);
       const error = new HttpError(
@@ -893,16 +681,29 @@ const unlikeProduct = async (req, res, next) => {
       return next(error);
     }
 
-    if (!user) {
-      const error = new HttpError("Could not find user for this user id", 404);
+    // find like document and delete it
+    try {
+      await Like.findOneAndDelete(
+        {
+          userId: userId,
+          productId: productId,
+        },
+        { session: sess }
+      );
+    } catch (err) {
+      console.log(err);
+      const error = new HttpError(
+        "Something went wrong, please try again later.",
+        500
+      );
       return next(error);
     }
 
+    await sess.commitTransaction();
     res.status(200).json({
       message: "Unliked Product",
       product: product.toObject({ getters: true }),
     });
-    await sess.commitTransaction();
   } catch (err) {
     console.log(err);
     const error = new HttpError("Something went wrong.", 500);
@@ -911,7 +712,6 @@ const unlikeProduct = async (req, res, next) => {
 };
 
 exports.getProductById = getProductById;
-exports.getProductsByUserId = getProductsByUserId;
 exports.getAllFollowingProducts = getAllFollowingProducts;
 exports.getCategoryProducts = getCategoryProducts;
 exports.searchForProducts = searchForProducts;

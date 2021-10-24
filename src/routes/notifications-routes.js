@@ -71,17 +71,11 @@ router.patch("/", notificationsController.markNotificationsAsRead);
 /**
  * @swagger
  *
- * /notifications/{userId}/{notificationId}:
+ * /notifications/{notificationId}:
  *   delete:
  *     summary: Deletes a notification
  *     tags: [Notifications]
  *     parameters:
- *       - in: path
- *         name: userId
- *         schema:
- *           type: string
- *         required: true
- *         description: id of the logged in user
  *       - in: path
  *         name: notificationId
  *         schema:
@@ -92,9 +86,6 @@ router.patch("/", notificationsController.markNotificationsAsRead);
  *       "200":
  *         description: Message indicating if deletion succeeded
  */
-router.delete(
-  "/:userId/:notificationId",
-  notificationsController.dismissNotification
-);
+router.delete("/:notificationId", notificationsController.dismissNotification);
 
 module.exports = router;

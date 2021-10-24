@@ -8,43 +8,17 @@ const User = require("../models/user");
 const Match = require("../models/match");
 const Notification = require("../models/notification");
 
-const getReviewByMatchId = async (req, res, next) => {
-  const { uid, mid } = req.params;
-
-  let review;
-  try {
-    const reviews = await Review.find({ creator: uid, matchId: mid });
-    review = reviews[0]; // only a unique review given uid and mid
-  } catch (err) {
-    const error = new HttpError("Failed to fetch review", 500);
-    return next(error);
-  }
-
-  if (!review) {
-    const error = new HttpError("Could not find review ", 404);
-    return next(error);
-  }
-
-  res.json({
-    review,
-  });
-};
-
 const getReviewsByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
   let reviews;
   try {
-    reviews = await User.findById(userId)
+    reviews = await Review.find({ reviewed: userId })
       .populate({
-        path: "reviews",
-        populate: {
-          path: "creator",
-          select: "profilePic name",
-        },
-        options: { sort: { createdAt: -1 } },
+        path: "creator",
+        select: "profilePic name",
       })
-      .select("reviews reviewRating");
+      .sort({ createdAt: -1 });
   } catch (err) {
     const error = new HttpError("Failed to fetch reviews", 500);
     return next(error);
@@ -55,7 +29,10 @@ const getReviewsByUserId = async (req, res, next) => {
     return next(error);
   }
 
-  res.json(reviews);
+  const reviewRating =
+    reviews.reduce((prev, curr) => prev + curr.rating, 0) / reviews.length;
+
+  res.json({ reviews: reviews, reviewRating });
 };
 
 const createReview = async (req, res, next) => {
@@ -67,9 +44,9 @@ const createReview = async (req, res, next) => {
   const { description, creator, reviewed, rating, matchId, pid } = req.body;
 
   try {
-    const reviews = await Review.find({ creator, matchId });
+    const isReviewExisting = await Review.exists({ creator, matchId });
 
-    if (reviews.length >= 1) {
+    if (isReviewExisting) {
       const error = new HttpError("Review has already been made", 400);
       return next(error);
     }
@@ -90,7 +67,7 @@ const createReview = async (req, res, next) => {
   let loggedInUser;
 
   try {
-    userReviewed = await User.findById(reviewed).populate("reviews");
+    userReviewed = await User.findById(reviewed);
     loggedInUser = await User.findById(creator);
   } catch (err) {
     console.log(err);
@@ -116,12 +93,6 @@ const createReview = async (req, res, next) => {
     }
     await match.save({ session: sess });
     await createdReview.save({ session: sess });
-    userReviewed.reviews.push(createdReview);
-    userReviewed.reviewRating = (
-      userReviewed.reviews.reduce((totalReviewRating, review) => {
-        return totalReviewRating + review.rating;
-      }, 0) / userReviewed.reviews.length
-    ).toFixed(1);
 
     let notification;
     notification = new Notification({
@@ -132,8 +103,6 @@ const createReview = async (req, res, next) => {
       isRead: false,
     });
     await notification.save({ session: sess });
-    userReviewed.notifications.push(notification._id);
-    await userReviewed.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
     console.log(err);
@@ -162,4 +131,3 @@ const createReview = async (req, res, next) => {
 
 exports.createReview = createReview;
 exports.getReviewsByUserId = getReviewsByUserId;
-exports.getReviewByMatchId = getReviewByMatchId;
