@@ -18,7 +18,7 @@ const getAllChatRooms = async (req, res, next) => {
           select: "title imageUrl category minPrice maxPrice",
         },
         { path: "users", select: "profilePic username" },
-        { path: "messages", select: "content createdAt" },
+        { path: "messages", select: "content imageUrl createdAt" },
       ],
       options: { sort: { updatedAt: -1 } },
     });
@@ -27,11 +27,15 @@ const getAllChatRooms = async (req, res, next) => {
       const numMessages = chat.messages.length;
       const hasMessage = numMessages >= 1;
       return {
+        chatId: chat._id,
+        product: chat.product,
         user: chat.users.find(
+            (usr) => usr._id.toString() === userId.toString()
+        ),
+        opposingUser: chat.users.find(
           (usr) => usr._id.toString() !== userId.toString()
         ),
-        chatId: chat.id,
-        product: chat.product,
+        messages: chat.messages,
         latestMessage: hasMessage ? chat.messages[numMessages - 1].content : "",
         updatedAt: chat.updatedAt,
       };

@@ -7,12 +7,14 @@ const sendPushNotification = require("./pushNotification");
 
 const chatSocket = (io) => {
   io.on("connection", (socket) => {
-    socket.on("join", async ({ chatId }) => {
+    console.log("Received a Connection");
+    socket.on("join", async ({ chatIdList }) => {
       try {
-        console.log("Attempting to join:", chatId);
-        socket.join(chatId);
-        socket.emit("joined", chatId);
-        socket.activeRoom = chatId;
+        console.log(chatIdList);
+        console.log("Attempting to join:", chatIdList);
+        socket.join(chatIdList);
+        socket.emit("joined", {chatIdList});
+        console.log("Joined", chatIdList);
       } catch (e) {
         console.error(e);
       }
@@ -20,7 +22,7 @@ const chatSocket = (io) => {
     socket.on("new message", async ({ chatId, userId, content }) => {
       console.log("new message:", content);
       try {
-        let chat = await Chat.findById(socket.activeRoom).populate({
+        let chat = await Chat.findById(chatId).populate({
           path: "users",
           select: "name pushToken",
         });
@@ -35,7 +37,7 @@ const chatSocket = (io) => {
         await msg.save({ session: sess });
         await chat.save({ session: sess });
         await sess.commitTransaction();
-        socket.to(socket.activeRoom).emit("receive message", msg);
+        socket.to(chatId).emit("receive message", { chatId, msg });
 
         // Send Notification: can fail
         const receivingUser = chat.users.find(
@@ -56,7 +58,7 @@ const chatSocket = (io) => {
     socket.on("new image", async ({ chatId, userId, imageUrl }) => {
       console.log("new image:", imageUrl);
       try {
-        let chat = await Chat.findById(socket.activeRoom).populate({
+        let chat = await Chat.findById(chatId).populate({
           path: "users",
           select: "name pushToken",
         });
@@ -70,7 +72,7 @@ const chatSocket = (io) => {
         chat.messages.push(msg);
         await msg.save({ session: sess });
         await chat.save({ session: sess });
-        socket.to(socket.activeRoom).emit("receive image", msg);
+        socket.to(chatId).emit("receive image", { chatId, msg });
 
         // Send Notification: can fail
         const receivingUser = chat.users.find(
